@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Horas - DHL</title>
+    <link rel="icon" href="https://www.dhl.com/etc/clientlibs/dhl/clientlib-all/favicon-32x32.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Header / Navbar -->
+        <header>
+            <div class="header-left">
+                <img src="https://cdn.worldvectorlogo.com/logos/dhl-logo-1.svg" alt="Logo" class="header-logo">
+                <h1 class="hide-mobile">Controle de Horas</h1>
+                
+                <!-- NOVA NAVEGAÇÃO -->
+                <nav class="header-nav">
+                    <a href="time_tracker.html" class="nav-link active">
+                        <i class="fas fa-clock"></i> <span class="hide-mobile">Time Tracker</span>
+                    </a>
+                    <a href="projects.html" class="nav-link">
+                        <i class="fas fa-project-diagram"></i> <span class="hide-mobile">Projetos</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="header-right">
+                <button id="dark-mode-toggle" class="icon-btn" title="Modo Escuro">
+                    <i class="fas fa-moon"></i>
+                </button>
+
+                <!-- Menu de Usuário -->
+                <div class="user-menu-container">
+                    <button id="user-menu-btn" class="user-menu-trigger">
+                        <span id="header-username">Usuário</span>
+                        <img id="header-avatar" src="" alt="Avatar" class="avatar-placeholder">
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </button>
+
+                    <div id="user-dropdown" class="dropdown-menu hidden">
+                        <div class="dropdown-header">
+                            <strong id="dropdown-name">Nome</strong>
+                            <span id="dropdown-email">email@dhl.com</span>
+                        </div>
+                        <hr>
+                        <a href="#" class="dropdown-item" id="open-unified-modal"><i class="fas fa-user-cog"></i> Editar Perfil & Conta</a>
+                        <hr>
+                        <a href="#" class="dropdown-item text-danger" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="container">
+            
+            <!-- Seção do Cronômetro -->
+            <section class="timer-card card">
+                <div class="timer-display" id="timer-display">00:00:00</div>
+                
+                <div class="activity-control-group">
+                    <div class="select-container">
+                        <select id="activity-select" class="styled-select">
+                            <option value="" disabled selected>Selecione a atividade...</option>
+                            <!-- JS preenche -->
+                        </select>
+                        <input type="text" id="custom-activity-main" class="custom-activity-input hidden" placeholder="Digite o detalhe da atividade...">
+                    </div>
+                    
+                    <button id="btn-open-manual" class="btn btn-secondary" title="Inserir Manualmente">
+                        <i class="fas fa-pen"></i> Manual
+                    </button>
+                </div>
+
+                <div class="timer-actions">
+                    <button id="start-btn" class="btn btn-success btn-lg"><i class="fas fa-play"></i> Iniciar</button>
+                    <button id="stop-btn" class="btn btn-danger btn-lg" disabled><i class="fas fa-stop"></i> Parar</button>
+                </div>
+            </section>
+
+            <!-- Histórico -->
+            <section class="history-section card">
+                
+                <div class="section-header">
+                    <h3 id="history-title" style="margin-bottom: 0;">Histórico</h3>
+                </div>
+
+                <!-- BARRA DE FERRAMENTAS -->
+                <div class="table-toolbar">
+                    <div class="toolbar-left">
+                        <div class="view-mode-group" id="view-mode-buttons">
+                            <button class="filter-btn active" data-view="detailed"><i class="fas fa-list"></i> Detalhado</button>
+                            <button class="filter-btn" data-view="summary"><i class="fas fa-layer-group"></i> Resumo</button>
+                        </div>
+
+                        <div class="filters-group" id="history-filters">
+                            <button class="filter-btn active" data-filter="today">Hoje</button>
+                            <button class="filter-btn" data-filter="yesterday">Ontem</button>
+                            <button class="filter-btn" data-filter="week">Semana</button>
+                            <button class="filter-btn" data-filter="month">Mês</button>
+                            <button class="filter-btn" data-filter="all">Geral</button>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <button id="export-btn" class="btn btn-outline-success">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Atividade</th>
+                                <th>Duração</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS Preenche -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-footer">
+                                <td colspan="5">
+                                    <span class="total-label">Tempo Total:</span> 
+                                    <span class="total-value" id="history-total-time" style="margin-left: 10px; font-family: monospace;">00:00:00</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="app-footer">
+            <p>Desenvolvido &copy; <span id="footer-year">2025</span> | <i class="fas fa-envelope"></i> <a href="mailto:eduardojuan@dhl.com">eduardojuan@dhl.com</a></p>
+        </footer>
+    </div>
+
+    <!-- Modais mantidos (Exclusão, Manual, Edição, Perfil) -->
+    <!-- Modal de Confirmação de Exclusão (Redesign) -->
+    <div id="delete-confirm-modal" class="modal hidden">
+        <div class="modal-content delete-modal-content">
+            <div class="modal-body text-center">
+                <!-- Ícone Animado -->
+                <div class="delete-icon-wrapper">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+                
+                <!-- Textos -->
+                <h3 class="delete-title">Excluir Projeto?</h3>
+                <p class="delete-text">Você está prestes a remover este registro permanentemente.</p>
+                <p class="delete-warning"><i class="fas fa-exclamation-circle"></i> Essa ação não pode ser desfeita.</p>
+                
+                <!-- Botões -->
+                <div class="delete-actions">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                    <button type="button" id="confirm-delete-btn" class="btn btn-danger">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="manual-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-plus"></i> Registro Manual</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="manual-entry-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <div class="input-group"><i class="fas fa-calendar-alt input-icon"></i><input type="date" id="manual-date-input" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Atividade</label>
+                        <div class="input-group"><i class="fas fa-tasks input-icon"></i><select id="manual-activity-select" class="styled-select" required></select></div>
+                        <input type="text" id="manual-custom-activity" class="custom-activity-input hidden mt-2" placeholder="Descreva...">
+                    </div>
+                    <div class="form-group">
+                        <label>Duração (HH:MM:SS)</label>
+                        <div class="input-group"><i class="fas fa-stopwatch input-icon"></i><input type="text" id="manual-time-input" placeholder="01:30:00" required></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="edit-form">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-timestamp">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <div class="input-group"><i class="fas fa-calendar-day input-icon"></i><input type="date" id="edit-date" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Atividade</label>
+                        <div class="input-group"><i class="fas fa-clipboard-list input-icon"></i><select id="edit-activity-select" class="styled-select" required></select></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tempo Total</label>
+                        <div class="input-group"><i class="fas fa-clock input-icon"></i><input type="text" id="edit-time" required></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Perfil Unificado -->
+    <div id="unified-profile-modal" class="modal hidden">
+        <div class="modal-content large-modal">
+            <div class="modal-header"><h3>Perfil</h3><button class="close-modal">&times;</button></div>
+            <form id="unified-profile-form">
+                <div class="modal-body profile-grid">
+                    <div class="profile-left">
+                        <div class="profile-avatar-large">
+                            <img id="profile-image-large" src="" alt="Avatar">
+                            <label for="profile-image-input" class="edit-avatar-btn"><i class="fas fa-camera"></i></label>
+                            <input type="file" id="profile-image-input" class="hidden" accept="image/*">
+                        </div>
+                        <div class="form-group mt-2"><label>Nome</label><input type="text" id="edit-name"></div>
+                        <div class="form-group"><label>Bio</label><textarea id="edit-bio" rows="3"></textarea></div>
+                    </div>
+                    <div class="profile-right">
+                        <div class="form-row">
+                            <div class="form-group"><label>Depto</label><input type="text" id="edit-dept"></div>
+                            <div class="form-group"><label>Cargo</label><input type="text" id="edit-role"></div>
+                        </div>
+                        <div class="form-group"><label>Telefone</label><input type="text" id="edit-phone"></div>
+                        <div class="security-zone">
+                            <h4 style="margin-bottom:10px; border-bottom:1px solid #ddd;">Conta</h4>
+                            <div class="form-group"><label>E-mail</label><input type="email" id="edit-email" required></div>
+                            <div class="form-group"><label>Nova Senha</label><input type="password" id="edit-new-password"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- === NOVOS MODAIS DE SEGURANÇA === -->
+
+    <!-- 1. Modal para Exigir Senha -->
+    <div id="password-challenge-modal" class="modal hidden" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header" style="background: #333; color: white;">
+                <h3><i class="fas fa-lock"></i> Segurança</h3>
+                <button class="close-modal close-challenge-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-muted);">Para salvar as alterações, por favor confirme sua senha atual:</p>
+                <div class="form-group">
+                    <div class="input-group">
+                        <i class="fas fa-key input-icon"></i>
+                        <input type="password" id="challenge-password-input" placeholder="Digite sua senha atual..." required>
+                    </div>
+                </div>
+                <p id="challenge-error" class="hidden" style="color: var(--danger); font-size: 0.85rem; margin-top: 5px;"><i class="fas fa-exclamation-circle"></i> Senha incorreta.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-challenge-btn">Cancelar</button>
+                <button type="button" id="confirm-save-btn" class="btn btn-primary">Confirmar e Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Modal de Sucesso -->
+    <div id="success-modal" class="modal hidden" style="z-index: 3001;">
+        <div class="modal-content text-center" style="max-width: 350px; padding: 2rem;">
+            <div style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Sucesso!</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Seu perfil foi atualizado corretamente.</p>
+            <button id="close-all-modals-btn" class="btn btn-success btn-block">OK</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sheetjs-style/dist/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
