@@ -145,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sel.innerHTML = '<option value="" disabled selected>Selecione a atividade...</option>';
             activitiesList.forEach(act => sel.appendChild(new Option(act, act)));
             
-            const opt = new Option('✏️ Outra / Personalizada', CUSTOM_OPTION_VALUE);
-            opt.style.color = '#D40511'; opt.style.fontWeight = 'bold';
+            const opt = new Option('Outra / Personalizada', CUSTOM_OPTION_VALUE);
+            opt.style.color = '#fffff'; opt.style.fontWeight = 'bold';
             sel.appendChild(opt);
 
             sel.onchange = () => {
