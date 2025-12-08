@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Projetos - DHL</title>
-    <link rel="icon" href="https://github.com/ejuanoli/Portal/blob/3b0186bcf0da263eef72147f32fb18fa87ba9f67/Captura%20de%20tela%202025-12-03%20104940%20(1).png" type="image/png">
+    <title>Projects Management</title>
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3133/3133158.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,25 +13,26 @@
         <!-- Navbar -->
         <header>
             <div class="header-left">
-                <img src="https://github.com/ejuanoli/Portal/blob/3b0186bcf0da263eef72147f32fb18fa87ba9f67/Captura%20de%20tela%202025-12-03%20104940%20(1).png" alt="Logo" class="header-logo">
-                <h1 class="hide-mobile">Gestão de Projetos</h1>
+                <img src="https://cdn-icons-png.flaticon.com/512/3133/3133158.png" alt="Logo" class="header-logo">
+                <h1 class="hide-mobile" id="title-pj">Projects Management</h1>
                 <nav class="header-nav">
                     <a href="time_tracker.html" class="nav-link"><i class="fas fa-clock"></i> <span class="hide-mobile">Time Tracker</span></a>
-                    <a href="projects.html" class="nav-link active"><i class="fas fa-project-diagram"></i> <span class="hide-mobile">Projetos</span></a>
+                    <a href="projects.html" class="nav-link active"><i class="fas fa-project-diagram"></i> 
+                    <span class="hide-mobile">Pipeline</span></a>
                 </nav>
             </div>
             <div class="header-right">
                 <button id="dark-mode-toggle" class="icon-btn"><i class="fas fa-moon"></i></button>
                 <div class="user-menu-container">
                     <button id="user-menu-btn" class="user-menu-trigger">
-                        <span id="header-username">Usuário</span>
+                        <span id="header-username">User</span>
                         <img id="header-avatar" src="" alt="Avatar" class="avatar-placeholder">
                         <i class="fas fa-chevron-down arrow-icon"></i>
                     </button>
 
                     <div id="user-dropdown" class="dropdown-menu hidden">
                         <div class="dropdown-header">
-                            <strong id="dropdown-name">Nome</strong>
+                            <strong id="dropdown-name">Name</strong>
                             <span id="dropdown-email">email@dhl.com</span>
                         </div>
                         <hr>
@@ -157,7 +158,12 @@
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>Categoria</label><input type="text" id="p-category"></div>
+                        <div class="form-group"><label>Categoria</label>
+                            <select id="p-category" class="styled-select">
+                                <option value="Sistemas Operacionais">Sistemas Operacionais</option>
+                                <option value="Digitalização">Digitalização</option>
+                            </select>
+                        </div>
                         <div class="form-group"><label>Área</label><input type="text" id="p-area"></div>
                         <div class="form-group"><label>Sistema Utilizado</label><input type="text" id="p-system"></div>
                     </div>
@@ -302,5 +308,4 @@
     <script src="https://cdn.jsdelivr.net/npm/sheetjs-style/dist/xlsx.full.min.js"></script>
     <script src="project_script.js"></script>
 </body>
-
 </html>
