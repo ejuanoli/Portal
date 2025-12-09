@@ -29,6 +29,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         phone: ''
     };
 
+    // Lógica do botão de filtro no Time Tracker
+    const ttFilterBtn = document.getElementById('toggle-filters-btn');
+    const ttWrapper = document.getElementById('tt-filter-wrapper');
+    const ttIcon = document.getElementById('tt-filter-icon');
+
+    if(ttFilterBtn && ttWrapper) {
+        ttFilterBtn.onclick = () => {
+            ttWrapper.classList.toggle('active');
+            if(ttWrapper.classList.contains('active')){
+                ttIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                ttIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        };
+    }
     // ==========================================
     // 1. HELPERS (Formatadores e UI)
     // ==========================================
