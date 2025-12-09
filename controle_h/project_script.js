@@ -257,17 +257,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(areas.has(currentA)) areaSelect.value = currentA;
     };
 
-    // Botão Filtro Mobile
+
+    // Botão Filtro (Desktop e Mobile)
     const toggleFilterBtn = document.getElementById('toggle-filters-btn');
-    const filtersContainer = document.querySelector('.filters-row'); 
-    
-    if(toggleFilterBtn) {
+    const filterWrapper = document.getElementById('projects-filter-wrapper');
+    const filterIcon = document.getElementById('filter-icon'); // ID que adicionamos no ícone
+
+    if(toggleFilterBtn && filterWrapper) {
         toggleFilterBtn.onclick = () => {
-            filtersContainer.classList.toggle('show-mobile');
-            const icon = toggleFilterBtn.querySelector('.fa-chevron-down, .fa-chevron-up');
-            if(icon) {
-                icon.classList.toggle('fa-chevron-down');
-                icon.classList.toggle('fa-chevron-up');
+            // Alterna a visibilidade
+            filterWrapper.classList.toggle('active');
+            
+            // Alterna o ícone (Seta pra baixo / Seta pra cima)
+            if (filterWrapper.classList.contains('active')) {
+                filterIcon.classList.remove('fa-chevron-down');
+                filterIcon.classList.add('fa-chevron-up');
+                // Opcional: focar na busca ao abrir
+                document.getElementById('search-project').focus();
+            } else {
+                filterIcon.classList.remove('fa-chevron-up');
+                filterIcon.classList.add('fa-chevron-down');
             }
         };
     }
@@ -330,35 +339,44 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Layout Responsivo com data-label
             tr.innerHTML = `
-                <td class="id-column" data-label="ID">#${p.id}</td>
-                <td class="font-bold" data-label="Projeto">${p.name}</td>
-                <td data-label="Site">${p.site || '-'}</td>
-                <td data-label="Status"><span class="badge ${statusClass}">${p.status || '-'}</span></td>
-                <td data-label="Progresso">
-                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
-                        <div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${p.progress || 0}%"></div></div>
-                        <small>${p.progress || 0}%</small>
-                    </div>
-                </td>
-                <td data-label="Categoria">${p.category || '-'}</td>
-                <td data-label="Área">${p.area || '-'}</td>
-                <td data-label="Complexidade">${p.complexity || '-'}</td>
-                <td data-label="Solicitante">${p.requester || '-'}</td>
-                <td data-label="Responsável">${p.responsible || '-'}</td>
-                <td data-label="Início">${p.start_date ? new Date(p.start_date).toLocaleDateString() : '-'}</td> 
-                <td data-label="Entrega">${p.completion_date ? new Date(p.completion_date).toLocaleDateString() : '-'}</td>
-                <td data-label="Horas Est.">${p.estimated_hours || 0}h</td>
-                <td data-label="Monetização">${formatCurrency(p.monetization)}</td>
-                <td data-label="Comentários">
-                    ${p.comments ? `<button class="icon-btn" onclick="showComment('${encodeURIComponent(p.comments)}')"><i class="fas fa-comment"></i> Ver</button>` : '-'}
-                </td>
-                <td data-label="Ações">
-                    <button class="icon-btn" onclick="editProject(${p.id})"><i class="fas fa-edit"></i></button>
-                    <button class="icon-btn" onclick="deleteProject(${p.id})"><i class="fas fa-trash text-danger"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            <td class="id-column mobile-hide" data-label="ID">#${p.id}</td>
+            
+            <td class="font-bold" data-label="Projeto">${p.name}</td>
+            
+            <td class="mobile-hide" data-label="Site">${p.site || '-'}</td>
+            
+            <td data-label="Status"><span class="badge ${statusClass}">${p.status || '-'}</span></td>
+            
+            <td data-label="Progresso">
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
+                    <div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${p.progress || 0}%"></div></div>
+                    <small>${p.progress || 0}%</small>
+                </div>
+            </td>
+            
+            <td class="mobile-hide" data-label="Categoria">${p.category || '-'}</td>
+            <td class="mobile-hide" data-label="Área">${p.area || '-'}</td>
+            <td class="mobile-hide" data-label="Complexidade">${p.complexity || '-'}</td>
+            <td class="mobile-hide" data-label="Solicitante">${p.requester || '-'}</td>
+            
+            <td data-label="Responsável">${p.responsible || '-'}</td>
+            
+            <td class="mobile-hide" data-label="Início">${p.start_date ? new Date(p.start_date).toLocaleDateString() : '-'}</td> 
+            
+            <td class="mobile-hide" data-label="Entrega">${p.completion_date ? new Date(p.completion_date).toLocaleDateString() : '-'}</td>
+            <td class="mobile-hide" data-label="Horas Est.">${p.estimated_hours || 0}h</td>
+            <td class="mobile-hide" data-label="Monetização">${formatCurrency(p.monetization)}</td>
+            <td class="mobile-hide" data-label="Comentários">
+                ${p.comments ? `<button class="icon-btn" onclick="showComment('${encodeURIComponent(p.comments)}')"><i class="fas fa-comment"></i></button>` : '-'}
+            </td>
+            
+            <td data-label="Ações">
+                <button class="icon-btn" onclick="editProject(${p.id})"><i class="fas fa-edit"></i></button>
+                <button class="icon-btn" onclick="deleteProject(${p.id})"><i class="fas fa-trash text-danger"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 
         // 4. Botão Ver Mais
         const cardSection = document.querySelector('#projects-table').closest('.card'); 
