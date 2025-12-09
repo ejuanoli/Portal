@@ -65,6 +65,9 @@
             <section class="card">
                 <div class="table-toolbar">
                     <div class="toolbar-left filters-row">
+                        <button id="toggle-filters-btn" class="btn btn-secondary mobile-filter-toggle">
+                            <i class="fas fa-filter"></i> Filtrar e Buscar <i class="fas fa-chevron-down"></i>
+                        </button>
                         <!-- Busca -->
                         <div class="input-wrapper">
                             <input type="text" id="search-project" placeholder="Buscar projeto..." class="filter-control search-small">
@@ -72,7 +75,7 @@
                         
                         <!-- Filtros -->
                         <select id="filter-status" class="filter-control styled-select-small">
-                            <option value="">Status: Todos</option>
+                            <option value="">Status: All</option>
                             <option value="Not Started">Não Iniciado</option>
                             <option value="In Progress">Em Andamento</option>
                             <option value="On Hold">Em Espera</option>
@@ -81,12 +84,12 @@
                         </select>
 
                         <select id="filter-user" class="filter-control styled-select-small">
-                            <option value="">Usuário: Todos</option>
+                            <option value="">Responsible: All</option>
                         </select>
 
                         <!-- NOVO: Filtro de Área -->
                         <select id="filter-area" class="filter-control styled-select-small">
-                            <option value="">Área: Todas</option>
+                            <option value="">Area: All</option>
                         </select>
                     </div>
 
@@ -160,11 +163,18 @@
                     <div class="form-row">
                         <div class="form-group"><label>Categoria</label>
                             <select id="p-category" class="styled-select">
-                                <option value="Sistemas Operacionais">Sistemas Operacionais</option>
-                                <option value="Digitalização">Digitalização</option>
+                                <option value="Development">Development</option>
+                                <option value="Governance">Governance</option>
+                                <option value="Change">Change</option>
+                                <option value="Maintenance">Maintenance</option>
                             </select>
                         </div>
-                        <div class="form-group"><label>Área</label><input type="text" id="p-area"></div>
+                        <div class="form-group"><label>Área</label>
+                            <select id="p-area" class="styled-select">
+                                <option value="Digitalização">Digitalização</option>
+                                <option value="Sistemas Operacionais">Sistemas Operacionais</option>
+                            </select>
+                        </div>  
                         <div class="form-group"><label>Sistema Utilizado</label><input type="text" id="p-system"></div>
                     </div>
                     <div class="form-row">
@@ -305,6 +315,7 @@
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sheetjs-style/dist/xlsx.full.min.js"></script>
     <script src="project_script.js"></script>
 </body>
