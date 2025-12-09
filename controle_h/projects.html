@@ -46,7 +46,7 @@
 
         <main class="container fluid-container">
             <!-- Stats -->
-            <section class="stats-row">
+            <section class="stats-row" id="visuais">
                 <div class="card stat-card">
                     <div class="stat-icon bg-blue"><i class="fas fa-tasks"></i></div>
                     <div class="stat-info"><h3>Total Projetos</h3><span id="total-projects">0</span></div>
@@ -62,35 +62,41 @@
             </section>
 
             <!-- Tabela -->
-            <section class="card">
+            <section class="card" id="pj_tbl">
+                <!-- projects.html (Dentro da section class="card") -->
+
                 <div class="table-toolbar">
-                    <div class="toolbar-left filters-row">
+                    <div class="toolbar-left">
+                        <!-- 1. O Botão fica fora do wrapper de inputs -->
                         <button id="toggle-filters-btn" class="btn btn-secondary mobile-filter-toggle">
-                            <i class="fas fa-filter"></i> Filtrar e Buscar <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-filter"></i> Filtrar e Buscar <i class="fas fa-chevron-down" id="filter-icon"></i>
                         </button>
-                        <!-- Busca -->
-                        <div class="input-wrapper">
-                            <input type="text" id="search-project" placeholder="Buscar projeto..." class="filter-control search-small">
+
+                        <!-- 2. Os Inputs ficam dentro desta nova div 'filter-wrapper' -->
+                        <div id="projects-filter-wrapper" class="filter-wrapper">
+                            <!-- Busca -->
+                            <div class="input-wrapper">
+                                <input type="text" id="search-project" placeholder="Buscar projeto..." class="filter-control search-small">
+                            </div>
+                            
+                            <!-- Filtros -->
+                            <select id="filter-status" class="filter-control styled-select-small">
+                                <option value="">Status: All</option>
+                                <option value="Not Started">Não Iniciado</option>
+                                <option value="In Progress">Em Andamento</option>
+                                <option value="On Hold">Em Espera</option>
+                                <option value="Completed">Concluído</option>
+                                <option value="Cancelled">Cancelado</option>
+                            </select>
+
+                            <select id="filter-user" class="filter-control styled-select-small">
+                                <option value="">Responsible: All</option>
+                            </select>
+
+                            <select id="filter-area" class="filter-control styled-select-small">
+                                <option value="">Area: All</option>
+                            </select>
                         </div>
-                        
-                        <!-- Filtros -->
-                        <select id="filter-status" class="filter-control styled-select-small">
-                            <option value="">Status: All</option>
-                            <option value="Not Started">Não Iniciado</option>
-                            <option value="In Progress">Em Andamento</option>
-                            <option value="On Hold">Em Espera</option>
-                            <option value="Completed">Concluído</option>
-                            <option value="Cancelled">Cancelado</option>
-                        </select>
-
-                        <select id="filter-user" class="filter-control styled-select-small">
-                            <option value="">Responsible: All</option>
-                        </select>
-
-                        <!-- NOVO: Filtro de Área -->
-                        <select id="filter-area" class="filter-control styled-select-small">
-                            <option value="">Area: All</option>
-                        </select>
                     </div>
 
                     <div class="toolbar-right">
