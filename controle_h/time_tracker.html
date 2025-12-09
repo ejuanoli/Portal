@@ -179,6 +179,7 @@
         </div>
     </div>
 
+<!-- Modal Registro Manual -->
     <div id="manual-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -188,8 +189,12 @@
             <form id="manual-entry-form">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Data</label>
-                        <div class="input-group"><i class="fas fa-calendar-alt input-icon"></i><input type="date" id="manual-date-input" required></div>
+                        <!-- ALTERADO AQUI: Label e Input type -->
+                        <label>Data e Hora</label>
+                        <div class="input-group">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input type="datetime-local" id="manual-date-input" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Atividade</label>
@@ -209,6 +214,7 @@
         </div>
     </div>
 
+    <!-- Modal Editar -->
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -219,8 +225,12 @@
                 <div class="modal-body">
                     <input type="hidden" id="edit-timestamp">
                     <div class="form-group">
-                        <label>Data</label>
-                        <div class="input-group"><i class="fas fa-calendar-day input-icon"></i><input type="date" id="edit-date" required></div>
+                        <!-- ALTERADO AQUI: Label e Input type -->
+                        <label>Data e Hora</label>
+                        <div class="input-group">
+                            <i class="fas fa-calendar-day input-icon"></i>
+                            <input type="datetime-local" id="edit-date" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Atividade</label>
@@ -317,3 +327,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+
