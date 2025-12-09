@@ -61,7 +61,7 @@
         <main class="container">
             
             <!-- Seção do Cronômetro -->
-            <section class="timer-card card">
+            <section class="timer-card card" id="pj_tbl">
                 <div class="timer-display" id="timer-display">00:00:00</div>
                 
                 <div class="activity-control-group">
@@ -85,29 +85,34 @@
             </section>
 
             <!-- Histórico -->
-            <section class="history-section card">
+            <section class="history-section card" id="pj_tbl">
                 
                 <div class="section-header">
                     <h3 id="history-title" style="margin-bottom: 0;">Histórico</h3>
                 </div>
 
                 <!-- BARRA DE FERRAMENTAS -->
-                <div class="table-toolbar">
+                <div class="table-toolbar" >
                     <div class="toolbar-left">
+                        <!-- Botão -->
                         <button id="toggle-filters-btn" class="btn btn-secondary mobile-filter-toggle">
-                            <i class="fas fa-filter"></i> Filtrar e Buscar <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-filter"></i> Filtros <i class="fas fa-chevron-down" id="tt-filter-icon"></i>
                         </button>
-                        <div class="view-mode-group" id="view-mode-buttons">
-                            <button class="filter-btn active" data-view="detailed"><i class="fas fa-list"></i> Detalhado</button>
-                            <button class="filter-btn" data-view="summary"><i class="fas fa-layer-group"></i> Resumo</button>
-                        </div>
-
-                        <div class="filters-group" id="history-filters">
-                            <button class="filter-btn active" data-filter="today">Hoje</button>
-                            <button class="filter-btn" data-filter="yesterday">Ontem</button>
-                            <button class="filter-btn" data-filter="week">Semana</button>
-                            <button class="filter-btn" data-filter="month">Mês</button>
-                            <button class="filter-btn" data-filter="all">Geral</button>
+                        
+                        <!-- Wrapper escondido -->
+                        <div id="tt-filter-wrapper" class="filter-wrapper">
+                            <div class="view-mode-group" id="view-mode-buttons">
+                                <button class="filter-btn active" data-view="detailed"><i class="fas fa-list"></i> Detalhado</button>
+                                <button class="filter-btn" data-view="summary"><i class="fas fa-layer-group"></i> Resumo</button>
+                            </div>
+                    
+                            <div class="filters-group" id="history-filters">
+                                <button class="filter-btn active" data-filter="today">Hoje</button>
+                                <button class="filter-btn" data-filter="yesterday">Ontem</button>
+                                <button class="filter-btn" data-filter="week">Semana</button>
+                                <button class="filter-btn" data-filter="month">Mês</button>
+                                <button class="filter-btn" data-filter="all">Geral</button>
+                            </div>
                         </div>
                     </div>
 
