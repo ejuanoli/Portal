@@ -722,9 +722,88 @@ body.dark-mode #dark-mode-toggle {
     .progress-bar-container { width: 100px; }
 }
 
-/* Esconde botão de filtro no Desktop */
-.mobile-filter-toggle { display: none; }
+/* --- ADICIONE ISTO AO FINAL DO ARQUIVO style.css --- */
 
+@media (max-width: 768px) {
+    /* 1. Ocultar colunas secundárias no mobile para reduzir o tamanho do card */
+    .mobile-hide { 
+        display: none !important; 
+    }
+
+    #pj_tbl {
+        max-width: 430px;
+    }
+    #visuais {
+        max-width: 423px !important;
+    }
+    /* 2. Compactar o Card */
+    .data-table tr {
+        margin-bottom: 0.8rem; /* Menos espaço entre cartões */
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .data-table td {
+        padding: 6px 12px; /* Padding reduzido */
+        min-height: 30px;  /* Altura mínima menor */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem; /* Fonte ligeiramente menor */
+    }
+
+    /* Ajuste para o rótulo (data-label) não ocupar muito espaço */
+    .data-table td::before {
+        font-size: 0.7rem;
+        margin-right: 10px;
+        flex-shrink: 0; /* Impede que o rótulo quebre linha ou suma */
+    }
+
+    /* Destaque para o Título do Projeto no Card */
+    .data-table td[data-label="Projeto"] {
+        background-color: var(--bg-input);
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--dhl-red);
+        justify-content: center;
+        text-align: center;
+        border-bottom: 2px solid var(--border);
+    }
+    /* Esconde o label "Projeto" pois o destaque já é suficiente */
+    .data-table td[data-label="Projeto"]::before {
+        display: none;
+    }
+    
+    /* Ações (botões) compactas e centralizadas */
+    .data-table td[data-label="Ações"] {
+        justify-content: center;
+        gap: 20px;
+        background-color: transparent;
+        border-top: 1px solid var(--border);
+    }
+
+    .filter-wrapper.active {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        margin-top: 10px;
+    }
+    
+    .toolbar-left {
+        flex-wrap: wrap;
+    }
+
+
+}
+
+/* Esconde botão de filtro no Desktop */
+.mobile-filter-toggle {
+    display: inline-block !important; /* Força a visibilidade */
+    margin-right: 10px;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+}
 /* Cards de Estatística */
 .stats-row {
     display: grid;
@@ -783,6 +862,26 @@ body.dark-mode .badge-blue { background-color: #055160; color: #cff4fc; }
 body.dark-mode .badge-green { background-color: #0f5132; color: #d1e7dd; }
 body.dark-mode .badge-yellow { background-color: #664d03; color: #fff3cd; }
 
+
+.mobile-filter-toggle:hover {
+    background-color: var(--dhl-red);
+    color: white;
+    border-color: var(--dhl-red);
+}
+
+/* 2. Container dos Inputs de Filtro (Escondido por padrão) */
+.filter-wrapper {
+    display: none; /* Começa oculto */
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Classe para mostrar os filtros quando ativo */
+.filter-wrapper.active {
+    display: flex;
+}
 /* Barra de Progresso na Tabela */
 .progress-bar-container {
     width: 80px;
