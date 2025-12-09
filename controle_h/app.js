@@ -1,93 +1,37 @@
 /**
- * APP.JS - Gerencia Time Tracker, Cronômetro e Histórico
- * Arquivo específico para time_tracker.html
+ * APP.JS - Gerencia Time Tracker com Integração Supabase
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     // ==========================================
-    // 1. BANCO DE DADOS E HELPERS
+    // 0. CONFIGURAÇÃO SUPABASE & SESSÃO
     // ==========================================
-    class MockDatabase {
-        constructor() { this.prefix = 'dhl_time_tracker_'; }
-        
-        _getKey(col) { return `${this.prefix}${col}`; }
-        _getData(col) { return JSON.parse(localStorage.getItem(this._getKey(col))) || []; }
-        _saveData(col, data) { localStorage.setItem(this._getKey(col), JSON.stringify(data)); }
+    const supabaseUrl = 'https://gmepchrmdseulnlayyzi.supabase.co'; 
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtZXBjaHJtZHNldWxubGF5eXppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjY3MjYsImV4cCI6MjA4MDgwMjcyNn0.7wtAoP3cvz6Q93WiK1PbQAWtYQGGc1GIcN07oBylrv8';
+    const dbClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        getEntries(email) { 
-            const data = this._getData(`entries_${email}`);
-            return Array.isArray(data) ? data.sort((a,b) => b.timestamp - a.timestamp) : []; 
-        }
-        
-        addEntry(email, activity, seconds, timestamp) {
-            const entries = this._getData(`entries_${email}`);
-            entries.push({ id: Date.now(), activity, seconds, timestamp, exported: false });
-            this._saveData(`entries_${email}`, entries);
-        }
-        
-        deleteEntry(email, id) {
-            let entries = this._getData(`entries_${email}`);
-            entries = entries.filter(e => e.id !== id && e.timestamp !== id);
-            this._saveData(`entries_${email}`, entries);
-        }
-
-        updateEntry(email, id, newData) {
-            let entries = this._getData(`entries_${email}`);
-            const idx = entries.findIndex(e => e.id === id);
-            if(idx !== -1) {
-                entries[idx] = { ...entries[idx], ...newData };
-                this._saveData(`entries_${email}`, entries);
-                return true;
-            }
-            return false;
-        }
-        
-        markAsExported(email, filteredEntries) {
-            let allEntries = this._getData(`entries_${email}`);
-            const idsToMark = filteredEntries.map(e => e.id);
-            allEntries.forEach(e => { 
-                if(idsToMark.includes(e.id) && !e.exported) e.exported = true; 
-            });
-            this._saveData(`entries_${email}`, allEntries);
-        }
-
-        updateUserAndReturn(email, newData) {
-            let users = this._getData('users');
-            const idx = users.findIndex(u => u.email === email);
-            if(idx !== -1) {
-                users[idx] = {...users[idx], ...newData};
-                this._saveData('users', users); 
-                localStorage.setItem('dhl_active_user', JSON.stringify(users[idx]));
-                return users[idx]; 
-            }
-            return null;
-        }
-    }
-
-    const db = new MockDatabase();
-    
-    // Recuperar Sessão
-    let currentUser = null;
-    try {
-        currentUser = JSON.parse(localStorage.getItem('dhl_active_user'));
-    } catch(e) { console.error("Erro ao ler usuario", e); }
-
-    // Se não estiver logado, chuta para o index
-    if (!currentUser) {
+    // 1. Verifica Sessão
+    const userEmail = localStorage.getItem('usuarioLogado');
+    if (!userEmail) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Variáveis Globais de Estado
-    let timerInterval = null;
-    let isHistoryExpanded = false;
-    let pendingDeleteId = null;
-    let currentViewMode = 'detailed'; 
-    const activitiesList = ['Reunião', 'Desenvolvimento', 'Email/Admin', 'Intervalo', 'Planejamento', 'Suporte'];
-    const CUSTOM_OPTION_VALUE = 'custom_opt_val';
+    // Variável para armazenar dados do usuário atual
+    let currentUser = {
+        name: 'Carregando...',
+        email: userEmail,
+        avatar: '',
+        bio: '',
+        dept: '',
+        role: '',
+        phone: ''
+    };
 
-    // Helpers UI
+    // ==========================================
+    // 1. HELPERS (Formatadores e UI)
+    // ==========================================
     const formatTime = (totalSec) => {
         const h = Math.floor(totalSec / 3600).toString().padStart(2,'0');
         const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2,'0');
@@ -106,15 +50,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Date(year, month - 1, day);
     };
 
+    // --- NOTIFICAÇÃO ORIGINAL RESTAURADA ---
     const showNotification = (msg, type='info') => {
         const existing = document.querySelector('.notification'); if(existing) existing.remove();
         const notif = document.createElement('div');
         notif.className = `notification notification-${type}`;
-        const icon = type==='success'?'<i class="fas fa-check-circle"></i>':(type==='error'?'<i class="fas fa-exclamation-triangle"></i>':'<i class="fas fa-info-circle"></i>');
+        
+        // Ícones baseados no tipo
+        const icon = type==='success'
+            ? '<i class="fas fa-check-circle"></i>'
+            : (type==='error' ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-info-circle"></i>');
+        
         notif.innerHTML = `${icon} <span>${msg}</span>`;
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 3500);
     };
+    // ----------------------------------------
 
     const toggleModal = (modal, show=true) => {
         if(!modal) return;
@@ -126,22 +77,200 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const getFinalActivity = (sel, inp) => (sel.value === CUSTOM_OPTION_VALUE) ? inp.value.trim() : sel.value;
+    const getFinalActivity = (sel, inp) => (sel.value === 'custom_opt_val') ? inp.value.trim() : sel.value;
 
     // ==========================================
-    // 2. CONFIGURAÇÃO DE UI
+    // 2. FUNÇÕES DE BANCO DE DADOS (SUPABASE)
     // ==========================================
     
+    // Carregar Perfil
+    async function loadUserProfile() {
+        // Busca os dados no Supabase
+        const { data, error } = await dbClient
+            .from('users')
+            .select('*')
+            .eq('email', userEmail)
+            .single();
+    
+        if (data) {
+            // Mescla os dados do banco com o objeto local
+            currentUser = { ...currentUser, ...data };
+    
+            // === LÓGICA SOLICITADA ===
+            // Se existir 'name' e não for vazio, usa o nome.
+            // Caso contrário, usa o próprio email.
+            if (data.name && data.name.trim() !== '') {
+                currentUser.name = data.name;
+            } else {
+                currentUser.name = data.email; 
+            }
+    
+            // Atualiza o LocalStorage também para garantir que a página de Projetos (projects.html) pegue a mudança
+            localStorage.setItem('dhl_active_user', JSON.stringify(currentUser));
+            
+            // Atualiza a tela
+            updateUI();
+        } else {
+            console.error("Erro ao carregar perfil:", error);
+        }
+    }
+
+    // Carregar Histórico
+    async function fetchEntries() {
+        const { data, error } = await dbClient
+            .from('time_tracker')
+            .select('*')
+            .eq('email', userEmail)
+            .order('criado_em', { ascending: false });
+
+        if (error) {
+            console.error("Erro ao buscar histórico:", error);
+            return [];
+        }
+
+        return data.map(row => ({
+            id: row.id,
+            activity: row.atividade,
+            seconds: timeToSeconds(row.duracao),
+            timestamp: new Date(row.criado_em).getTime(),
+            exported: row.status === 'Concluído'
+        }));
+    }
+
+    // Adicionar
+    async function addEntryToDB(activity, seconds, timestamp) {
+        const duracaoStr = formatTime(seconds);
+        const dataIso = new Date(timestamp).toISOString();
+
+        const { error } = await dbClient
+            .from('time_tracker')
+            .insert({
+                email: userEmail,
+                atividade: activity,
+                duracao: duracaoStr,
+                criado_em: dataIso,
+                status: 'Pendente'
+            });
+
+        if (error) {
+            showNotification('Erro ao salvar: ' + error.message, 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // Editar
+    async function updateEntryInDB(id, activity, seconds, timestamp) {
+        const duracaoStr = formatTime(seconds);
+        const dataIso = new Date(timestamp).toISOString();
+
+        const { error } = await dbClient
+            .from('time_tracker')
+            .update({
+                atividade: activity,
+                duracao: duracaoStr,
+                criado_em: dataIso
+            })
+            .eq('id', id);
+
+        if (error) {
+            showNotification('Erro ao editar: ' + error.message, 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // Excluir
+    async function deleteEntryFromDB(id) {
+        const { error } = await dbClient
+            .from('time_tracker')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            showNotification('Erro ao excluir: ' + error.message, 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // Marcar como Exportado
+    async function markAsExportedInDB(entries) {
+        const ids = entries.map(e => e.id);
+        await dbClient
+            .from('time_tracker')
+            .update({ status: 'Concluído' })
+            .in('id', ids);
+    }
+
+    // Atualizar Perfil
+    async function updateUserProfileInDB(updates) {
+        const { passwordHash, ...safeUpdates } = updates;
+        
+        if (passwordHash) {
+            safeUpdates.password = passwordHash.replace('hash_', '');
+        }
+
+        const { error } = await dbClient
+            .from('users')
+            .update(safeUpdates)
+            .eq('email', userEmail);
+
+        if (error) {
+            console.error(error);
+            return false;
+        }
+        return true;
+    }
+
+    // ==========================================
+    // 3. UI & LÓGICA DO APP
+    // ==========================================
+
+    let timerInterval = null;
+    let isHistoryExpanded = false;
+    let pendingDeleteId = null;
+    let currentViewMode = 'detailed'; 
+    const activitiesList = ['Reunião', 'Desenvolvimento', 'Email/Admin', 'Intervalo', 'Planejamento', 'Suporte'];
+    const CUSTOM_OPTION_VALUE = 'custom_opt_val';
+
+    const updateUI = () => {
+        // Atualiza o nome no Header
+        const headerNameEl = document.getElementById('header-username');
+        if (headerNameEl) {
+            // Exibe o nome. Como tratamos no loadUserProfile, aqui já estará correto (Nome ou Email)
+            headerNameEl.textContent = currentUser.name; 
+        }
+    
+        // Atualiza Avatar no Header
+        const avatarImg = document.getElementById('header-avatar');
+        if (avatarImg) {
+            if (currentUser.avatar && currentUser.avatar.length > 50) {
+                avatarImg.src = currentUser.avatar;
+                avatarImg.classList.remove('avatar-placeholder');
+            } else {
+                // Placeholder padrão se não tiver foto
+                avatarImg.src = 'https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png';
+            }
+        }
+    
+        // Atualiza o Dropdown (Menu de usuário)
+        const ddName = document.getElementById('dropdown-name');
+        if (ddName) ddName.textContent = currentUser.name;
+        
+        const ddEmail = document.getElementById('dropdown-email');
+        if (ddEmail) ddEmail.textContent = currentUser.email;
+    };
+
     const setupSelects = () => {
         const sets = [
             { sel: document.getElementById('activity-select'), inp: document.getElementById('custom-activity-main') },
             { sel: document.getElementById('manual-activity-select'), inp: document.getElementById('manual-custom-activity') },
-            { sel: document.getElementById('edit-activity-select'), inp: null } // Edit pode precisar de lógica especial
+            { sel: document.getElementById('edit-activity-select'), inp: null }
         ];
 
         sets.forEach(({ sel, inp }) => {
             if(!sel) return;
-            // Limpa e repopula
             sel.innerHTML = '<option value="" disabled selected>Selecione a atividade...</option>';
             activitiesList.forEach(act => sel.appendChild(new Option(act, act)));
             
@@ -150,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             sel.appendChild(opt);
 
             sel.onchange = () => {
-                // Se tiver input associado (casos manuais e main)
                 if (inp) {
                     if(sel.value === CUSTOM_OPTION_VALUE) { 
                         inp.classList.remove('hidden'); 
@@ -160,41 +288,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         inp.classList.add('hidden'); 
                         inp.value = ''; 
                     }
-                } else {
-                     // Lógica específica para o modal de edição (cria input dinamicamente se não existir)
-                     // Para simplificar, assumimos que edição usa apenas a lista ou texto fixo.
                 }
             };
         });
     };
 
-    const updateUI = () => {
-        // Header info
-        document.getElementById('header-username').textContent = currentUser.name;
-        
-        // Avatar
-        const avatarImg = document.getElementById('header-avatar');
-        if(currentUser.avatar && currentUser.avatar.length > 50) {
-            avatarImg.src = currentUser.avatar;
-            avatarImg.classList.remove('avatar-placeholder');
-        } else {
-            avatarImg.src = 'https://raw.githubusercontent.com/wuelnerdotexe/DHL-clone/main/src/assets/default-user.png';
-        }
-
-        // Dropdown info
-        const ddName = document.getElementById('dropdown-name');
-        if(ddName) ddName.textContent = currentUser.name;
-        const ddEmail = document.getElementById('dropdown-email');
-        if(ddEmail) ddEmail.textContent = currentUser.email;
-
-        // Footer
-        const ftYear = document.getElementById('footer-year');
-        if(ftYear) ftYear.textContent = new Date().getFullYear();
-    };
-
-    // ==========================================
-    // 3. LÓGICA DO CRONÔMETRO
-    // ==========================================
+    // --- CRONÔMETRO ---
     const timerDisplay = document.getElementById('timer-display');
     const startBtn = document.getElementById('start-btn');
     const stopBtn = document.getElementById('stop-btn');
@@ -214,13 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const activity = localStorage.getItem('dhl_timer_activity');
 
         if (start) {
-            // Estado: Rodando
             startBtn.disabled = true;
             stopBtn.disabled = false;
             activitySelect.disabled = true;
             customActivity.disabled = true;
 
-            // Restaura visual
             if(activity && activitySelect) {
                 let found = false;
                 Array.from(activitySelect.options).forEach(opt => {
@@ -235,12 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     customActivity.value = activity;
                 }
             }
-
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimerDisplay, 1000);
             updateTimerDisplay(); 
         } else {
-            // Estado: Parado
             timerDisplay.textContent = '00:00:00';
             startBtn.disabled = false;
             stopBtn.disabled = true;
@@ -259,18 +354,18 @@ document.addEventListener('DOMContentLoaded', () => {
         checkActiveTimer();
     };
 
-    stopBtn.onclick = () => {
+    stopBtn.onclick = async () => {
         const start = localStorage.getItem('dhl_timer_start');
         const act = localStorage.getItem('dhl_timer_activity');
         
         if (start && act) {
             const seconds = Math.floor((Date.now() - parseInt(start)) / 1000);
-            db.addEntry(currentUser.email, act, seconds, Date.now()); // Salva com o timestamp atual de término
+            
+            await addEntryToDB(act, seconds, Date.now());
             
             localStorage.removeItem('dhl_timer_start');
             localStorage.removeItem('dhl_timer_activity');
             
-            // Reset UI
             activitySelect.value = "";
             customActivity.classList.add('hidden');
             customActivity.value = "";
@@ -280,15 +375,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ==========================================
-    // 4. HISTÓRICO E TABELA
-    // ==========================================
+    // --- HISTÓRICO ---
     const getActiveFilter = () => document.querySelector('#history-filters .filter-btn.active')?.dataset.filter || 'today';
 
-    const getFilteredData = () => {
-        let entries = db.getEntries(currentUser.email);
+    const renderHistory = async () => {
+        const tbody = document.querySelector('#history-table tbody');
+        const footerTotal = document.getElementById('history-total-time');
+        const section = document.querySelector('.history-section');
+        
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando...</td></tr>';
+        
+        let allEntries = await fetchEntries();
+
         const filter = getActiveFilter();
         const today = new Date(); today.setHours(0,0,0,0);
+        let entries = allEntries;
 
         if (filter === 'today') {
             entries = entries.filter(e => new Date(e.timestamp) >= today);
@@ -302,43 +403,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const m = new Date(today.getFullYear(), today.getMonth(), 1);
             entries = entries.filter(e => new Date(e.timestamp) >= m);
         }
-        return entries;
-    };
 
-    const getGroupedEntries = (entries) => {
-        const grouped = {};
-        entries.forEach(e => {
-            const dateStr = new Date(e.timestamp).toLocaleDateString();
-            const key = `${dateStr}:::${e.activity}`;
-            if(!grouped[key]) grouped[key] = { date: dateStr, activity: e.activity, seconds: 0, ids: [e.id], rawTime: e.timestamp };
-            grouped[key].seconds += e.seconds;
-            if(!grouped[key].ids.includes(e.id)) grouped[key].ids.push(e.id);
-        });
-        return Object.values(grouped).sort((a,b) => b.rawTime - a.rawTime);
-    };
-
-    const renderHistory = () => {
-        const tbody = document.querySelector('#history-table tbody');
-        const footerTotal = document.getElementById('history-total-time');
-        const section = document.querySelector('.history-section');
+        const totalSecs = entries.reduce((acc, c) => acc + c.seconds, 0);
+        footerTotal.textContent = formatTime(totalSecs);
         
-        // Remove botão "Ver mais" antigo se existir
         const oldBtn = document.querySelector('.view-more-container');
         if(oldBtn) oldBtn.remove();
         
         tbody.innerHTML = '';
-        
-        let entries = getFilteredData();
-        const totalSecs = entries.reduce((acc, c) => acc + c.seconds, 0);
-        footerTotal.textContent = formatTime(totalSecs);
 
         if(entries.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color:var(--text-muted);">Nenhum registro encontrado.</td></tr>';
             return;
         }
 
+        const getGroupedEntries = (list) => {
+            const grouped = {};
+            list.forEach(e => {
+                const dateStr = new Date(e.timestamp).toLocaleDateString();
+                const key = `${dateStr}:::${e.activity}`;
+                if(!grouped[key]) grouped[key] = { date: dateStr, activity: e.activity, seconds: 0, ids: [e.id], rawTime: e.timestamp };
+                grouped[key].seconds += e.seconds;
+                if(!grouped[key].ids.includes(e.id)) grouped[key].ids.push(e.id);
+            });
+            return Object.values(grouped).sort((a,b) => b.rawTime - a.rawTime);
+        };
+
         let displayList = (currentViewMode === 'summary') ? getGroupedEntries(entries) : entries;
-        const LIMIT = 5; // Mostrar 5 itens inicialmente
+        const LIMIT = 2;
         const totalItems = displayList.length;
         const itemsToShow = isHistoryExpanded ? displayList : displayList.slice(0, LIMIT);
 
@@ -359,11 +451,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="icon-btn del-btn" data-id="${item.id}" title="Excluir"><i class="fas fa-trash"></i></button>`;
             }
 
-            tr.innerHTML = `<td>${dateHTML}</td><td>${item.activity}</td><td style="font-family:monospace; font-weight:bold">${formatTime(item.seconds)}</td><td>${statusHTML}</td><td>${actionsHTML}</td>`;
-            tbody.appendChild(tr);
-        });
+            tr.innerHTML = `
+            <td data-label="Data">${dateHTML}</td>
+            <td data-label="Atividade" class="font-bold">${item.activity}</td>
+            <td data-label="Duração" style="font-family:monospace; font-weight:bold">${formatTime(item.seconds)}</td>
+            <td data-label="Status">${statusHTML}</td>
+            <td data-label="Ações">${actionsHTML}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 
-        // Botão Ver Mais
         if(totalItems > LIMIT) {
             const btnDiv = document.createElement('div');
             btnDiv.className = 'view-more-container';
@@ -375,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
             section.appendChild(btnDiv);
         }
 
-        // Eventos dos botões da tabela
         if(currentViewMode !== 'summary') {
             document.querySelectorAll('.del-btn').forEach(btn => {
                 btn.onclick = (e) => {
@@ -384,19 +480,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             });
             document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = (e) => {
+                btn.onclick = async (e) => {
                     const id = parseInt(e.currentTarget.dataset.id);
-                    openEditModal(id);
+                    await openEditModal(id);
                 };
             });
         }
     };
 
-    // ==========================================
-    // 5. MODAIS E AÇÕES (Manual, Edit, Delete, Profile)
-    // ==========================================
-    
-    // Modal Manual
+    // --- AÇÕES MANUAIS E MODAIS ---
     const btnManual = document.getElementById('btn-open-manual');
     if(btnManual) {
         btnManual.onclick = () => {
@@ -406,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleModal(document.getElementById('manual-modal'));
         };
 
-        document.getElementById('manual-entry-form').onsubmit = (e) => {
+        document.getElementById('manual-entry-form').onsubmit = async (e) => {
             e.preventDefault();
             const act = getFinalActivity(document.getElementById('manual-activity-select'), document.getElementById('manual-custom-activity'));
             const sec = timeToSeconds(document.getElementById('manual-time-input').value);
@@ -414,10 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const d = parseLocalDate(dateInput); 
             const now = new Date(); 
-            // Mantem a hora atual para ordenação
             d.setHours(now.getHours(), now.getMinutes(), now.getSeconds()); 
             
-            db.addEntry(currentUser.email, act, sec, d.getTime());
+            await addEntryToDB(act, sec, d.getTime());
+            
             toggleModal(document.getElementById('manual-modal'), false);
             e.target.reset(); 
             document.getElementById('manual-custom-activity').classList.add('hidden');
@@ -426,35 +518,28 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Modal Edit
-    const openEditModal = (id) => {
-        const entry = db.getEntries(currentUser.email).find(e => e.id === id);
+    const openEditModal = async (id) => {
+        const entries = await fetchEntries();
+        const entry = entries.find(e => e.id === id);
         if(!entry) return;
         
-        // Populate
         const dateObj = new Date(entry.timestamp);
-        // Ajuste fuso horário simples para o input date
         const localIso = new Date(dateObj - (dateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         
-        document.getElementById('edit-timestamp').value = entry.id; // Guardamos o ID no hidden
+        document.getElementById('edit-timestamp').value = entry.id; 
         document.getElementById('edit-date').value = localIso;
         document.getElementById('edit-time').value = formatTime(entry.seconds);
         
         const editSel = document.getElementById('edit-activity-select');
-        // Tenta selecionar. Se não existir na lista, assume que é custom?
-        // Simplificação: vamos apenas setar o value. Se for custom, o usuário teria que selecionar "Outro" e digitar.
-        // Como o HTML do Edit não tem o campo de input custom no snippet original, vamos simplificar:
         editSel.value = entry.activity;
         if(editSel.selectedIndex === -1) {
-             // Se a atividade não está na lista padrão, adicione temporariamente ou use 'Outro'
              const opt = new Option(entry.activity, entry.activity, true, true);
              editSel.add(opt);
         }
-
         toggleModal(document.getElementById('edit-modal'));
     };
 
-    document.getElementById('edit-form').onsubmit = (e) => {
+    document.getElementById('edit-form').onsubmit = async (e) => {
         e.preventDefault();
         const id = parseInt(document.getElementById('edit-timestamp').value);
         const newDateVal = document.getElementById('edit-date').value;
@@ -463,34 +548,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const seconds = timeToSeconds(newTimeVal);
         const d = parseLocalDate(newDateVal);
-        // Preserva hora original do ID se for o mesmo dia, senão usa meio dia
         d.setHours(12,0,0);
 
-        db.updateEntry(currentUser.email, id, {
-            activity: newAct,
-            seconds: seconds,
-            timestamp: d.getTime()
-        });
+        await updateEntryInDB(id, newAct, seconds, d.getTime());
         
         toggleModal(document.getElementById('edit-modal'), false);
         renderHistory();
         showNotification('Registro atualizado.', 'success');
     };
 
-    // Modal Delete (Confirmação)
-    document.getElementById('confirm-delete-btn').onclick = () => {
+    document.getElementById('confirm-delete-btn').onclick = async () => {
         if(pendingDeleteId) {
-            db.deleteEntry(currentUser.email, pendingDeleteId);
+            await deleteEntryFromDB(pendingDeleteId);
             renderHistory();
             showNotification('Registro excluído.', 'success');
         }
         toggleModal(document.getElementById('delete-confirm-modal'), false);
     };
 
-    // Modal Perfil Unificado
+    // --- PERFIL ---
+    let pendingProfileUpdates = null;
+
     document.getElementById('open-unified-modal').onclick = (e) => {
         e.preventDefault();
-        // Preencher dados
         document.getElementById('edit-name').value = currentUser.name || '';
         document.getElementById('edit-email').value = currentUser.email || '';
         document.getElementById('edit-bio').value = currentUser.bio || '';
@@ -501,24 +581,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if(currentUser.avatar && currentUser.avatar.length > 50) {
             document.getElementById('profile-image-large').src = currentUser.avatar;
         } else {
-            document.getElementById('profile-image-large').src = 'https://raw.githubusercontent.com/wuelnerdotexe/DHL-clone/main/src/assets/default-user.png';
+            document.getElementById('profile-image-large').src = 'https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png';
         }
         
         toggleModal(document.getElementById('unified-profile-modal'));
     };
 
-// ==========================================
-    // LÓGICA DE ATUALIZAÇÃO DE PERFIL SEGURA
-    // ==========================================
-    
-    // Variável para armazenar as mudanças pendentes enquanto pede a senha
-    let pendingProfileUpdates = null;
-
-    // 1. Ao clicar em Salvar no Modal de Perfil
     document.getElementById('unified-profile-form').onsubmit = (e) => {
         e.preventDefault();
-        
-        // Coleta os dados básicos
         const updates = {
             name: document.getElementById('edit-name').value,
             bio: document.getElementById('edit-bio').value,
@@ -528,129 +598,140 @@ document.addEventListener('DOMContentLoaded', () => {
             email: document.getElementById('edit-email').value
         };
 
-        // Verifica se houve pedido de troca de senha (nova senha)
         const newPassInput = document.getElementById('edit-new-password').value;
         if(newPassInput && newPassInput.trim() !== "") {
-            updates.passwordHash = 'hash_' + newPassInput;
+            updates.passwordHash = 'hash_' + newPassInput; 
         }
 
-        // Processamento de Imagem (Assíncrono)
         const fileInput = document.getElementById('profile-image-input');
         if(fileInput.files && fileInput.files[0]) {
             const reader = new FileReader();
             reader.onload = function(evt) {
                 updates.avatar = evt.target.result;
-                triggerPasswordChallenge(updates); // Chama o popup de senha
+                triggerPasswordChallenge(updates); 
             };
             reader.readAsDataURL(fileInput.files[0]);
         } else {
-            // Mantém avatar antigo se não trocou
             triggerPasswordChallenge(updates);
         }
     };
 
-    // 2. Abre o Popup de Senha
     const triggerPasswordChallenge = (updates) => {
-        pendingProfileUpdates = updates; // Guarda na memória
-        
-        // Limpa erros anteriores e input
+        pendingProfileUpdates = updates;
         document.getElementById('challenge-password-input').value = '';
         document.getElementById('challenge-error').classList.add('hidden');
-        
-        // Abre modal de senha
         document.getElementById('password-challenge-modal').classList.remove('hidden');
         document.getElementById('challenge-password-input').focus();
     };
 
-    // 3. Ao Confirmar a Senha no Popup
-    document.getElementById('confirm-save-btn').onclick = () => {
+    document.getElementById('confirm-save-btn').onclick = async () => {
         const pwdInput = document.getElementById('challenge-password-input').value;
         const errorMsg = document.getElementById('challenge-error');
 
-        // Validação simples (vazia)
         if(!pwdInput) {
             errorMsg.textContent = "Digite sua senha.";
             errorMsg.classList.remove('hidden');
             return;
         }
 
-        // Verifica se a senha bate com o hash do usuário logado
-        if('hash_' + pwdInput !== currentUser.passwordHash) {
-            errorMsg.textContent = "Senha incorreta. Tente novamente.";
+        if(currentUser.password !== pwdInput) {
+            errorMsg.textContent = "Senha incorreta.";
             errorMsg.classList.remove('hidden');
-            // Animação de erro (opcional)
-            document.getElementById('challenge-password-input').classList.add('input-error');
-            setTimeout(() => document.getElementById('challenge-password-input').classList.remove('input-error'), 500);
             return;
         }
 
-        // SENHA CORRETA: Executa a atualização
-        commitProfileUpdate();
+        await commitProfileUpdate();
     };
 
-    // 4. Efetiva a Gravação no Banco e Mostra Sucesso
-    const commitProfileUpdate = () => {
-        if(!pendingProfileUpdates) return;
-
-        // Atualiza no "Banco de Dados" (LocalStorage)
-        // Nota: Certifique-se que a função updateUserInDB ou updateUserAndReturn existe no seu escopo
-        // No app.js use: db.updateUserAndReturn
-        // No project_script.js use: updateUserInDB
-        
-        // Exemplo genérico que funciona se a função estiver definida acima:
-        if (typeof db !== 'undefined' && db.updateUserAndReturn) {
-             currentUser = db.updateUserAndReturn(currentUser.email, pendingProfileUpdates);
-        } else if (typeof updateUserInDB !== 'undefined') {
-             updateUserInDB(currentUser.email, pendingProfileUpdates);
-             // Recarrega user atual
-             currentUser = JSON.parse(localStorage.getItem('dhl_active_user'));
+    const commitProfileUpdate = async () => {
+        if (!pendingProfileUpdates) return;
+    
+        // Envia para o Supabase
+        const success = await updateUserProfileInDB(pendingProfileUpdates);
+    
+        if (success) {
+            // === IMPORTANTE ===
+            // Recarrega os dados do banco imediatamente para atualizar a Navbar e variáveis locais
+            await loadUserProfile(); 
+            
+            // Fecha os modais e mostra sucesso
+            document.getElementById('password-challenge-modal').classList.add('hidden');
+            document.getElementById('unified-profile-modal').classList.add('hidden');
+            document.getElementById('success-modal').classList.remove('hidden');
+            
+            // Limpa campos de senha
+            document.getElementById('edit-new-password').value = '';
+        } else {
+            showNotification("Erro ao atualizar perfil no banco de dados.", 'error');
         }
-
-        // Atualiza a UI do Header
-        if(typeof updateUserUI !== 'undefined') updateUserUI(); // project_script.js
-        if(typeof updateUI !== 'undefined') updateUI(); // app.js
-
-        // Fecha Modal de Senha
-        document.getElementById('password-challenge-modal').classList.add('hidden');
-        
-        // Fecha Modal de Perfil (O PRINCIPAL)
-        document.getElementById('unified-profile-modal').classList.add('hidden');
-
-        // Abre Modal de Sucesso
-        document.getElementById('success-modal').classList.remove('hidden');
-        
-        // Limpa campos sensíveis
-        document.getElementById('edit-new-password').value = '';
         pendingProfileUpdates = null;
     };
-
-    // 5. Botão "OK" do Modal de Sucesso
     document.getElementById('close-all-modals-btn').onclick = () => {
         document.getElementById('success-modal').classList.add('hidden');
     };
-
-    // 6. Botões "Cancelar" do Modal de Senha
+    
     document.querySelectorAll('.close-challenge-btn').forEach(btn => {
         btn.onclick = () => {
             document.getElementById('password-challenge-modal').classList.add('hidden');
-            pendingProfileUpdates = null; // Cancela operação
+            pendingProfileUpdates = null;
         };
     });
 
-    const finalizeUpdate = (updates) => {
-        currentUser = db.updateUserAndReturn(currentUser.email, updates);
-        updateUI();
-        toggleModal(document.getElementById('unified-profile-modal'), false);
-        showNotification('Perfil atualizado!', 'success');
-        document.getElementById('verify-current-password').value = '';
-        document.getElementById('edit-new-password').value = '';
-    };
+    // --- EXPORTAR ---
+    const btnExport = document.getElementById('export-btn');
+    if(btnExport) {
+        btnExport.onclick = async () => {
+            let allEntries = await fetchEntries();
+            const filter = getActiveFilter();
+            const today = new Date(); today.setHours(0,0,0,0);
+            let entries = allEntries;
+            if (filter === 'today') entries = entries.filter(e => new Date(e.timestamp) >= today);
+            
+            if (entries.length === 0) return showNotification('Sem dados para exportar.', 'warning');
+            
+            let data = (currentViewMode === 'summary') 
+                ? (() => {
+                    const grouped = {};
+                    entries.forEach(e => {
+                        const dateStr = new Date(e.timestamp).toLocaleDateString();
+                        const key = `${dateStr}:::${e.activity}`;
+                        if(!grouped[key]) grouped[key] = { date: dateStr, activity: e.activity, seconds: 0 };
+                        grouped[key].seconds += e.seconds;
+                    });
+                    return Object.values(grouped).map(e => ({ 'Data': e.date, 'Atividade': e.activity, 'Tempo': formatTime(e.seconds) }));
+                })()
+                : entries.map(e => ({ 'Data': new Date(e.timestamp).toLocaleDateString(), 'Hora': new Date(e.timestamp).toLocaleTimeString(), 'Atividade': e.activity, 'Duração': formatTime(e.seconds) }));
+            
+            if(typeof XLSX !== 'undefined') {
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Relatório DHL");
+                XLSX.writeFile(wb, "Relatorio_Horas.xlsx");
+                
+                await markAsExportedInDB(entries);
+                renderHistory(); 
+                showNotification('Download iniciado e registros marcados como Concluídos.', 'success');
+            } else {
+                showNotification('Biblioteca XLSX não carregada.', 'error');
+            }
+        };
+    }
 
-    // ==========================================
-    // 6. EVENTOS GERAIS (Export, Filters, Logout)
-    // ==========================================
+    // --- LOGOUT ---
+    document.getElementById('logout-btn').onclick = (e) => {
+        e.preventDefault();
+        
+        // Limpa sessão
+        localStorage.removeItem('usuarioLogado');
+        localStorage.removeItem('dhl_active_user');
     
-    // Filtros de Data
+        // Limpa o Timer para não vazar para outro usuário
+        localStorage.removeItem('dhl_timer_start');
+        localStorage.removeItem('dhl_timer_activity');
+    
+        window.location.href = 'index.html';
+    };
+    // --- Eventos Globais ---
     document.querySelectorAll('#history-filters .filter-btn').forEach(btn => {
         btn.onclick = (e) => {
             document.querySelectorAll('#history-filters .filter-btn').forEach(b => b.classList.remove('active'));
@@ -660,7 +741,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // Filtros de View (Detalhado/Resumo)
     document.querySelectorAll('#view-mode-buttons .filter-btn').forEach(btn => {
         btn.onclick = (e) => {
             document.querySelectorAll('#view-mode-buttons .filter-btn').forEach(b => b.classList.remove('active'));
@@ -671,65 +751,26 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // Export Excel
-    const btnExport = document.getElementById('export-btn');
-    if(btnExport) {
-        btnExport.onclick = () => {
-            let entries = getFilteredData();
-            if (entries.length === 0) return showNotification('Sem dados para exportar.', 'warning');
-            
-            let data = (currentViewMode === 'summary') 
-                ? getGroupedEntries(entries).map(e => ({ 'Data': e.date, 'Atividade': e.activity, 'Tempo': formatTime(e.seconds) }))
-                : entries.map(e => ({ 'Data': new Date(e.timestamp).toLocaleDateString(), 'Hora': new Date(e.timestamp).toLocaleTimeString(), 'Atividade': e.activity, 'Duração': formatTime(e.seconds) }));
-            
-            if(typeof XLSX !== 'undefined') {
-                const ws = XLSX.utils.json_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Relatório DHL");
-                XLSX.writeFile(wb, "Relatorio_Horas.xlsx");
-                
-                db.markAsExported(currentUser.email, entries);
-                renderHistory(); 
-                showNotification('Download iniciado.', 'success');
-            } else {
-                showNotification('Biblioteca XLSX não carregada.', 'error');
-            }
-        };
-    }
-
-    // Logout
-    document.getElementById('logout-btn').onclick = (e) => {
-        e.preventDefault();
-        localStorage.removeItem('dhl_active_user');
-        window.location.href = 'index.html';
-    };
-
-    // Toggle Menu Usuário
     document.getElementById('user-menu-btn').onclick = () => {
         document.getElementById('user-dropdown').classList.toggle('hidden');
     };
 
-    // Dark Mode
     const dmBtn = document.getElementById('dark-mode-toggle');
     if(localStorage.getItem('dhl_dark_mode')==='true') document.body.classList.add('dark-mode');
-    
     if(dmBtn) {
         dmBtn.onclick = () => {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('dhl_dark_mode', document.body.classList.contains('dark-mode'));
         };
     }
-
-    // Close Modals
+    
     document.querySelectorAll('.close-modal, .close-modal-btn').forEach(b => {
         b.onclick = function() { toggleModal(this.closest('.modal'), false); };
     });
 
-    // ==========================================
-    // 7. INICIALIZAÇÃO
-    // ==========================================
+    // --- INICIALIZAÇÃO ---
     setupSelects();
-    updateUI();
-    renderHistory();
+    await loadUserProfile(); 
     checkActiveTimer();
+    renderHistory();
 });
