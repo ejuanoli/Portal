@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 3000);
     };
+
     const formatTime = (totalSec) => {
         const h = Math.floor(totalSec / 3600).toString().padStart(2,'0');
         const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2,'0');
@@ -49,15 +50,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `${h}:${m}:${s}`;
     };
 
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+    };
+
 
     // ==========================================
-    // 2. FUNÇÕES DE BANCO DE DADOS (PROJETOS)
+    // 2. FUNÇÕES DE BANCO DE DADOS (PROJETOS & TIMER)
     // ==========================================
 
     // Buscar Projetos
     const fetchProjects = async () => {
-        // Busca todos os projetos (sem filtro de usuário, conforme padrão de pipeline visível)
-        // Se quiser filtrar apenas do usuário logado: .eq('created_by_email', currentUser.email)
         const { data, error } = await dbClient
             .from('projects')
             .select('*')
@@ -118,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!popup) {
                 popup = document.createElement('div');
                 popup.id = 'global-timer-popup';
-                popup.className = 'timer-popup'; // Usa o CSS que já definimos
+                popup.className = 'timer-popup'; 
                 popup.innerHTML = `
                     <div class="timer-popup-content">
                         <span class="timer-popup-label">Em andamento...</span>
@@ -133,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Ação do Botão Parar no Popup
                 document.getElementById('popup-stop-btn').onclick = async () => {
-                    document.getElementById('popup-stop-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Loading
+                    document.getElementById('popup-stop-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
                     const saved = await saveTimerToDB();
                     if(saved) {
                         popup.remove();
@@ -152,11 +155,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             
             updateDisplay();
-            // Garante que não criamos múltiplos intervalos
             if (!timerInterval) timerInterval = setInterval(updateDisplay, 1000);
 
         } else {
-            // Se não tem timer rodando mas o popup existe, remove ele
             if (popup) {
                 popup.remove();
                 if(timerInterval) clearInterval(timerInterval);
@@ -166,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // ==========================================
-    // 3. LOGOUT INTELIGENTE (Salva antes de sair)
+    // 3. LOGOUT INTELIGENTE
     // ==========================================
     document.getElementById('logout-btn').onclick = async (e) => {
         e.preventDefault();
@@ -181,13 +182,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Limpa sessão
         localStorage.removeItem('dhl_active_user');
         localStorage.removeItem('usuarioLogado');
+        localStorage.removeItem('dhl_timer_start'); // Garante limpeza
+        localStorage.removeItem('dhl_timer_activity');
         
-        // Redireciona
         window.location.href = 'index.html';
     };
-    // Salvar Projeto (Novo ou Edição)
+
+    // Salvar Projeto
     const saveProjectToDB = async (projectData, id = null) => {
-        // Tratamento de datas vazias para NULL (Postgres não aceita string vazia em campo Date)
         const cleanData = {
             ...projectData,
             start_date: projectData.start_date || null,
@@ -199,20 +201,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let error;
         if (id) {
-            // Update
-            const { error: err } = await dbClient
-                .from('projects')
-                .update(cleanData)
-                .eq('id', id);
+            const { error: err } = await dbClient.from('projects').update(cleanData).eq('id', id);
             error = err;
         } else {
-            // Insert
-            const { error: err } = await dbClient
-                .from('projects')
-                .insert([{
-                    ...cleanData,
-                    created_by_email: currentUser.email // Vincula ao criador
-                }]);
+            const { error: err } = await dbClient.from('projects').insert([{
+                ...cleanData,
+                created_by_email: currentUser.email 
+            }]);
             error = err;
         }
 
@@ -226,10 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Excluir Projeto
     const deleteProjectFromDB = async (id) => {
-        const { error } = await dbClient
-            .from('projects')
-            .delete()
-            .eq('id', id);
+        const { error } = await dbClient.from('projects').delete().eq('id', id);
 
         if (error) {
             showNotification("Erro ao excluir: " + error.message, "error");
@@ -239,14 +231,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // ==========================================
-    // 3. UI LÓGICA & TABELA
+    // 4. UI LÓGICA & TABELA (CORREÇÃO AQUI)
     // ==========================================
 
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
-    };
-
-    // --- POPULA FILTROS ---
+    // Popula Filtros
     const populateFilters = () => {
         const users = new Set();
         const areas = new Set();
@@ -269,14 +257,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(areas.has(currentA)) areaSelect.value = currentA;
     };
 
-    // --- RENDERIZAÇÃO DA TABELA ---
+    // Botão Filtro Mobile
     const toggleFilterBtn = document.getElementById('toggle-filters-btn');
-    const filtersContainer = document.querySelector('.filters-row'); // Ou id='filters-container' se você adicionou o ID no HTML
+    const filtersContainer = document.querySelector('.filters-row'); 
     
     if(toggleFilterBtn) {
         toggleFilterBtn.onclick = () => {
             filtersContainer.classList.toggle('show-mobile');
-            // Alterna ícone
             const icon = toggleFilterBtn.querySelector('.fa-chevron-down, .fa-chevron-up');
             if(icon) {
                 icon.classList.toggle('fa-chevron-down');
@@ -285,7 +272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // RENDER TABLE ATUALIZADA COM DATA-LABEL
+    // --- RENDER TABLE (COM A CORREÇÃO DOS STATS) ---
     const renderTable = async (refreshData = false) => {
         const tbody = document.querySelector('#projects-table tbody');
         
@@ -299,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const userFilter = document.getElementById('filter-user').value.toLowerCase();
         const areaFilter = document.getElementById('filter-area').value.toLowerCase();
 
+        // 1. Filtragem
         const filteredProjects = localProjectsCache.filter(p => {
             const matchesText = (p.name||'').toLowerCase().includes(searchText) || (p.site||'').toLowerCase().includes(searchText);
             const matchesStatus = statusFilter === "" || p.status === statusFilter;
@@ -307,9 +295,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             return matchesText && matchesStatus && matchesUser && matchesArea;
         });
 
-        // Atualiza Stats (igual ao anterior)
-        // ... (seu código de stats aqui) ...
+        // 2. CÁLCULO DOS STATS (REINCLUÍDO AQUI)
+        let totalActive = 0;
+        let totalMoney = 0;
 
+        filteredProjects.forEach(p => {
+            if (p.status === 'In Progress') totalActive++;
+            totalMoney += parseFloat(p.monetization || 0);
+        });
+
+        // Atualiza os elementos no DOM
+        document.getElementById('total-projects').textContent = filteredProjects.length;
+        document.getElementById('active-projects').textContent = totalActive;
+        document.getElementById('total-money').textContent = formatCurrency(totalMoney);
+
+        // 3. Renderização das Linhas
         tbody.innerHTML = '';
         const LIMIT = 6;
         const itemsToShow = isProjectsExpanded ? filteredProjects : filteredProjects.slice(0, LIMIT);
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const tr = document.createElement('tr');
             
-            // AQUI ESTÁ O TRUQUE: data-label em cada TD
+            // Layout Responsivo com data-label
             tr.innerHTML = `
                 <td class="id-column" data-label="ID">#${p.id}</td>
                 <td class="font-bold" data-label="Projeto">${p.name}</td>
@@ -360,8 +360,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             tbody.appendChild(tr);
         });
 
+        // 4. Botão Ver Mais
+        const cardSection = document.querySelector('#projects-table').closest('.card'); 
+        const oldBtn = document.querySelector('.view-more-container');
+        if(oldBtn) oldBtn.remove();
 
-        // 5. Botão Ver Mais
         if (filteredProjects.length > LIMIT) {
             const btnDiv = document.createElement('div');
             btnDiv.className = 'view-more-container';
@@ -380,11 +383,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(filteredProjects.length <= LIMIT && isProjectsExpanded) isProjectsExpanded = false;
         }
 
-        populateFilters(); // Atualiza filtros com base nos dados carregados
+        populateFilters();
     };
 
     // ==========================================
-    // 4. FUNÇÕES GLOBAIS (MODAIS E AÇÕES)
+    // 5. FUNÇÕES GLOBAIS (MODAIS E AÇÕES)
     // ==========================================
 
     window.showComment = (encodedComment) => {
@@ -445,7 +448,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const idField = document.getElementById('p-id').value;
         const id = idField ? parseInt(idField) : null;
         
-        // Mapeia Form -> DB Object (snake_case)
         const projectData = {
             name: document.getElementById('p-name').value,
             site: document.getElementById('p-site').value,
@@ -471,7 +473,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (success) {
             document.getElementById('project-modal').classList.add('hidden');
             showNotification(id ? "Projeto atualizado!" : "Projeto criado!", "success");
-            renderTable(true); // Recarrega do banco
+            renderTable(true);
         }
     };
 
@@ -489,14 +491,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // --- FILTROS ---
-    document.getElementById('search-project').oninput = () => renderTable(false); // Filtra local
+    document.getElementById('search-project').oninput = () => renderTable(false);
     document.getElementById('filter-status').onchange = () => renderTable(false);
     document.getElementById('filter-user').onchange = () => renderTable(false);
     document.getElementById('filter-area').onchange = () => renderTable(false);
     document.getElementById('btn-export-projects').onclick = () => {
         if(typeof XLSX !== 'undefined') {
             const wb = XLSX.utils.book_new();
-            // Exporta o cache local que reflete o banco
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(localProjectsCache), "Projetos");
             XLSX.writeFile(wb, "Projetos_DHL.xlsx");
         } else {
@@ -505,11 +506,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // ==========================================
-    // 5. ATUALIZAÇÃO DE PERFIL DO USUÁRIO
-    // (Lógica replicada do App.js para consistência)
+    // 6. ATUALIZAÇÃO DE PERFIL DO USUÁRIO
     // ==========================================
-    
-    // Atualiza a UI do Header
     const updateUserUI = () => {
         if(!currentUser) return;
         document.getElementById('header-username').textContent = currentUser.name || currentUser.email;
@@ -529,26 +527,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Função para atualizar BD de Usuários
     const updateUserProfileInDB = async (updates) => {
         const { passwordHash, ...safeUpdates } = updates;
-        
-        // Remove hash_ prefixo se existir (caso tenha lógica de hash simulada)
         if (passwordHash) safeUpdates.password = passwordHash.replace('hash_', '');
-
-        const { error } = await dbClient
-            .from('users')
-            .update(safeUpdates)
-            .eq('email', currentUser.email);
-
-        if (error) {
-            console.error(error);
-            return false;
-        }
-        return true;
+        const { error } = await dbClient.from('users').update(safeUpdates).eq('email', currentUser.email);
+        return !error;
     };
 
-    // Carregar Perfil Recente (Igual App.js)
     async function loadUserProfile() {
         const { data } = await dbClient.from('users').select('*').eq('email', currentUser.email).single();
         if (data) {
@@ -563,12 +548,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // -- Eventos do Modal de Perfil --
     let pendingProfileUpdates = null;
 
     document.getElementById('open-unified-modal').onclick = (e) => {
         e.preventDefault();
-        // Preenche campos
         document.getElementById('edit-name').value = currentUser.name || '';
         document.getElementById('edit-email').value = currentUser.email || '';
         document.getElementById('edit-bio').value = currentUser.bio || '';
@@ -596,7 +579,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         const newPassInput = document.getElementById('edit-new-password').value;
         if(newPassInput && newPassInput.trim() !== "") {
-            updates.passwordHash = newPassInput; // Envia direto (cuidado em prod)
+            updates.passwordHash = newPassInput;
         }
         const fileInput = document.getElementById('profile-image-input');
         if(fileInput.files && fileInput.files[0]) {
@@ -627,7 +610,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             errorMsg.classList.remove('hidden'); return;
         }
         
-        // Verifica senha (localmente contra o objeto carregado)
         if(currentUser.password !== pwdInput) {
             errorMsg.textContent = "Senha incorreta.";
             errorMsg.classList.remove('hidden'); return;
@@ -646,7 +628,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         pendingProfileUpdates = null;
     };
 
-    // Fechar modais extras
     document.getElementById('close-all-modals-btn').onclick = () => document.getElementById('success-modal').classList.add('hidden');
     document.querySelectorAll('.close-challenge-btn').forEach(btn => {
         btn.onclick = () => {
@@ -656,10 +637,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ==========================================
-    // 6. INICIALIZAÇÃO
+    // 7. INICIALIZAÇÃO
     // ==========================================
     
-    // Modo Escuro
     document.getElementById('dark-mode-toggle').onclick = () => {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('dhl_dark_mode', document.body.classList.contains('dark-mode'));
@@ -668,22 +648,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('user-menu-btn').onclick = () => document.getElementById('user-dropdown').classList.toggle('hidden');
 
-    // --- LOGOUT (project_script.js) ---
-    document.getElementById('logout-btn').onclick = () => {
-        // Limpa sessão
-        localStorage.removeItem('dhl_active_user');
-        localStorage.removeItem('usuarioLogado'); // Garante que limpa a chave do auth.js também
-        
-        // Limpa o Timer (para não aparecer o popup flutuante para o próximo usuário)
-        localStorage.removeItem('dhl_timer_start');
-        localStorage.removeItem('dhl_timer_activity');
-        
-        window.location.href = 'index.html';
-    };
-
-    // Start
-    loadUserProfile(); // Carrega user e atualiza header
-    renderTable(true); // Carrega projetos do Supabase
+    loadUserProfile(); 
+    renderTable(true);
     
     setInterval(checkFloatingTimer, 1000);
 });
