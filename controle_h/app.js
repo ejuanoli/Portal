@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     // 1. HELPERS (Formatadores e UI)
     // ==========================================
+
+    const toLocalDatetimeString = (date) => {
+        const offset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - offset);
+        return localDate.toISOString().slice(0, 16); 
+    };
     const formatTime = (totalSec) => {
         const h = Math.floor(totalSec / 3600).toString().padStart(2,'0');
         const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2,'0');
@@ -504,26 +510,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // --- AÇÕES MANUAIS E MODAIS ---
-    const btnManual = document.getElementById('btn-open-manual');
+     const btnManual = document.getElementById('btn-open-manual');
     if(btnManual) {
         btnManual.onclick = () => {
-            const now = new Date();
-            const localIso = new Date(now - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-            document.getElementById('manual-date-input').value = localIso;
+            // AJUSTE: Usa o helper para preencher Data E Hora atual
+            document.getElementById('manual-date-input').value = toLocalDatetimeString(new Date());
             toggleModal(document.getElementById('manual-modal'));
         };
 
         document.getElementById('manual-entry-form').onsubmit = async (e) => {
             e.preventDefault();
             const act = getFinalActivity(document.getElementById('manual-activity-select'), document.getElementById('manual-custom-activity'));
+            
+            // Duração continua vindo do campo de texto
             const sec = timeToSeconds(document.getElementById('manual-time-input').value);
-            const dateInput = document.getElementById('manual-date-input').value;
             
-            const d = parseLocalDate(dateInput); 
-            const now = new Date(); 
-            d.setHours(now.getHours(), now.getMinutes(), now.getSeconds()); 
+            // AJUSTE: Pega o valor do datetime-local diretamente
+            const dateInputVal = document.getElementById('manual-date-input').value; 
             
-            await addEntryToDB(act, sec, d.getTime());
+            if(!dateInputVal) return showNotification('Data e hora inválidas', 'error');
+
+            // Cria o timestamp baseado exatamente no que o usuário escolheu
+            const timestamp = new Date(dateInputVal).getTime();
+            
+            await addEntryToDB(act, sec, timestamp);
             
             toggleModal(document.getElementById('manual-modal'), false);
             e.target.reset(); 
@@ -538,11 +548,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const entry = entries.find(e => e.id === id);
         if(!entry) return;
         
-        const dateObj = new Date(entry.timestamp);
-        const localIso = new Date(dateObj - (dateObj.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        
         document.getElementById('edit-timestamp').value = entry.id; 
-        document.getElementById('edit-date').value = localIso;
+        
+        // AJUSTE: Usa o helper para preencher o input datetime-local com a data/hora do registro
+        document.getElementById('edit-date').value = toLocalDatetimeString(new Date(entry.timestamp));
+        
         document.getElementById('edit-time').value = formatTime(entry.seconds);
         
         const editSel = document.getElementById('edit-activity-select');
@@ -557,15 +567,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('edit-form').onsubmit = async (e) => {
         e.preventDefault();
         const id = parseInt(document.getElementById('edit-timestamp').value);
-        const newDateVal = document.getElementById('edit-date').value;
-        const newTimeVal = document.getElementById('edit-time').value;
+        
+        // AJUSTE: Lê os novos valores
+        const newDateVal = document.getElementById('edit-date').value; // Formato: 2023-10-25T14:30
+        const newTimeVal = document.getElementById('edit-time').value; // Duração: 01:30:00
         const newAct = document.getElementById('edit-activity-select').value;
         
         const seconds = timeToSeconds(newTimeVal);
-        const d = parseLocalDate(newDateVal);
-        d.setHours(12,0,0);
+        
+        // Converte o valor do input datetime-local direto para timestamp
+        const timestamp = new Date(newDateVal).getTime();
 
-        await updateEntryInDB(id, newAct, seconds, d.getTime());
+        await updateEntryInDB(id, newAct, seconds, timestamp);
         
         toggleModal(document.getElementById('edit-modal'), false);
         renderHistory();
