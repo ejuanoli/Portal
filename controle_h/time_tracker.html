@@ -180,74 +180,74 @@
     </div>
 
 <!-- Modal Registro Manual -->
-    <div id="manual-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-calendar-plus"></i> Registro Manual</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <form id="manual-entry-form">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <!-- ALTERADO AQUI: Label e Input type -->
-                        <label>Data e Hora</label>
-                        <div class="input-group">
-                            <i class="fas fa-calendar-alt input-icon"></i>
-                            <input type="datetime-local" id="manual-date-input" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Atividade</label>
-                        <div class="input-group"><i class="fas fa-tasks input-icon"></i><select id="manual-activity-select" class="styled-select" required></select></div>
-                        <input type="text" id="manual-custom-activity" class="custom-activity-input hidden mt-2" placeholder="Descreva...">
-                    </div>
-                    <div class="form-group">
-                        <label>Duração (HH:MM:SS)</label>
-                        <div class="input-group"><i class="fas fa-stopwatch input-icon"></i><input type="text" id="manual-time-input" placeholder="01:30:00" required></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                </div>
-            </form>
+<div id="manual-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-calendar-plus"></i> Registro Manual</h3>
+            <button class="close-modal">&times;</button>
         </div>
+        <form id="manual-entry-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <!-- ALTERADO AQUI: Label e Input type -->
+                    <label>Data e Hora</label>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-alt input-icon"></i>
+                        <input type="datetime-local" id="manual-date-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Atividade</label>
+                    <div class="input-group"><i class="fas fa-tasks input-icon"></i><select id="manual-activity-select" class="styled-select" required></select></div>
+                    <input type="text" id="manual-custom-activity" class="custom-activity-input hidden mt-2" placeholder="Descreva...">
+                </div>
+                <div class="form-group">
+                    <label>Duração (HH:MM:SS)</label>
+                    <div class="input-group"><i class="fas fa-stopwatch input-icon"></i><input type="text" id="manual-time-input" placeholder="01:30:00" required></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Modal Editar -->
-    <div id="edit-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <form id="edit-form">
-                <div class="modal-body">
-                    <input type="hidden" id="edit-timestamp">
-                    <div class="form-group">
-                        <!-- ALTERADO AQUI: Label e Input type -->
-                        <label>Data e Hora</label>
-                        <div class="input-group">
-                            <i class="fas fa-calendar-day input-icon"></i>
-                            <input type="datetime-local" id="edit-date" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Atividade</label>
-                        <div class="input-group"><i class="fas fa-clipboard-list input-icon"></i><select id="edit-activity-select" class="styled-select" required></select></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Tempo Total</label>
-                        <div class="input-group"><i class="fas fa-clock input-icon"></i><input type="text" id="edit-time" required></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
-                    <button type="submit" class="btn btn-success">Salvar</button>
-                </div>
-            </form>
+<!-- Modal Editar -->
+<div id="edit-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Editar</h3>
+            <button class="close-modal">&times;</button>
         </div>
+        <form id="edit-form">
+            <div class="modal-body">
+                <input type="hidden" id="edit-timestamp">
+                <div class="form-group">
+                    <!-- ALTERADO AQUI: Label e Input type -->
+                    <label>Data e Hora</label>
+                    <div class="input-group">
+                        <i class="fas fa-calendar-day input-icon"></i>
+                        <input type="datetime-local" id="edit-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Atividade</label>
+                    <div class="input-group"><i class="fas fa-clipboard-list input-icon"></i><select id="edit-activity-select" class="styled-select" required></select></div>
+                </div>
+                <div class="form-group">
+                    <label>Tempo Total</label>
+                    <div class="input-group"><i class="fas fa-clock input-icon"></i><input type="text" id="edit-time" required></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal-btn">Cancelar</button>
+                <button type="submit" class="btn btn-success">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal Perfil Unificado -->
     <div id="unified-profile-modal" class="modal hidden">
@@ -327,4 +327,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
