@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             <td class="font-bold" data-label="Projeto">${p.name}</td>
             
-            <td class="mobile-hide" data-label="Site">${p.site || '-'}</td>
+            <td class="mobile-hide" data-label="Operation">${p.site || '-'}</td>
             
             <td data-label="Status"><span class="badge ${statusClass}">${p.status || '-'}</span></td>
             
@@ -671,3 +671,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     setInterval(checkFloatingTimer, 1000);
 });
+
