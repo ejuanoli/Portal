@@ -1,159 +1,191 @@
-/**
- * AUTH.JS - Gerencia Login, Cadastro e Recuperação de Senha
- * Arquivo específico para index.html
- */
+// --- CONFIGURAÇÃO DO SUPABASE ---
+const supabaseUrl = 'https://gmepchrmdseulnlayyzi.supabase.co'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtZXBjaHJtZHNldWxubGF5eXppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjY3MjYsImV4cCI6MjA4MDgwMjcyNn0.7wtAoP3cvz6Q93WiK1PbQAWtYQGGc1GIcN07oBylrv8';
+const db = supabase.createClient(supabaseUrl, supabaseKey);
 
-document.addEventListener('DOMContentLoaded', () => {
+// --- ELEMENTOS ---
+const loginForm = document.getElementById('login-form');
+const toggleRegisterBtn = document.getElementById('toggle-register');
+const registerFields = document.getElementById('register-fields');
+const authTitle = document.getElementById('auth-title');
+const submitBtn = document.getElementById('login-submit');
+const togglePasswordBtn = document.getElementById('toggle-password');
+const authSwitchText = document.getElementById('auth-switch-text');
+const msgBox = document.getElementById('auth-message');
+const forgotPassLink = document.getElementById('forgot-password-link');
+const loginActionsDiv = document.getElementById('login-actions');
 
-    // ==========================================
-    // 1. BANCO DE DADOS (MockDB)
-    // ==========================================
-    class MockDatabase {
-        constructor() { this.prefix = 'dhl_time_tracker_'; }
-        
-        _getKey(col) { return `${this.prefix}${col}`; }
-        _getData(col) { return JSON.parse(localStorage.getItem(this._getKey(col))) || []; }
-        _saveData(col, data) { localStorage.setItem(this._getKey(col), JSON.stringify(data)); }
+let isRegistering = false;
 
-        findUser(email) { return this._getData('users').find(u => u.email === email); }
-        
-        createUser(email, hash, secretQuestion, secretAnswer) {
-            const users = this._getData('users');
-            if(users.find(u => u.email === email)) return null;
+// --- FUNÇÕES AUXILIARES ---
 
-            const newUser = { 
-                id: Date.now(), email, passwordHash: hash, 
-                secretQuestion: secretQuestion || 'pet', 
-                secretAnswer: secretAnswer ? secretAnswer.toLowerCase().trim() : '',
-                name: email.split('@')[0], avatar: '', bio: '', dept: '', role: '', phone: '',
-                createdAt: new Date().toISOString() 
-            };
-            users.push(newUser); 
-            this._saveData('users', users); 
-            return newUser;
-        }
+function showMessage(text, type = 'error') {
+    // ALTERAÇÃO: Usamos innerHTML para permitir links dentro da mensagem
+    msgBox.innerHTML = text; 
+    msgBox.className = type === 'success' ? 'msg-success' : 'msg-error';
+    if(type === 'success') setTimeout(() => { msgBox.innerHTML = ''; }, 5000);
+}
 
-        updateUserAndReturn(email, newData) {
-            let users = this._getData('users');
-            const idx = users.findIndex(u => u.email === email);
-            if(idx !== -1) {
-                users[idx] = {...users[idx], ...newData};
-                this._saveData('users', users); 
-                return users[idx]; 
-            }
-            return null;
-        }
-    }
-    const db = new MockDatabase();
-
-    // ==========================================
-    // 2. HELPERS
-    // ==========================================
-    const showNotification = (msg, type='info') => {
-        const existing = document.querySelector('.notification'); if(existing) existing.remove();
-        const notif = document.createElement('div');
-        notif.className = `notification notification-${type}`;
-        const icon = type==='success'?'<i class="fas fa-check-circle"></i>':(type==='error'?'<i class="fas fa-exclamation-triangle"></i>':'<i class="fas fa-info-circle"></i>');
-        notif.innerHTML = `${icon} <span>${msg}</span>`;
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 3500);
-    };
-
-    // ==========================================
-    // 3. LÓGICA DE LOGIN E CADASTRO
-    // ==========================================
+function toggleView(forceRegister = false) {
+    if (forceRegister) isRegistering = false; 
     
-    // Verificar se já está logado
-    if (localStorage.getItem('dhl_active_user')) {
-        window.location.href = 'time_tracker.html';
-        return;
+    isRegistering = !isRegistering;
+    
+    if (isRegistering) {
+        // MODO CADASTRO / RECUPERAÇÃO
+        registerFields.classList.remove('hidden');
+        loginActionsDiv.classList.add('hidden'); // Some o link "Esqueci senha"
+        
+        authTitle.innerText = "Criar ou Recuperar Conta";
+        submitBtn.innerText = "Confirmar";
+        authSwitchText.innerText = "Já tem uma conta?";
+        toggleRegisterBtn.innerText = "Voltar para Login";
+        msgBox.innerHTML = ""; 
+    } else {
+        // MODO LOGIN
+        registerFields.classList.add('hidden');
+        loginActionsDiv.classList.remove('hidden'); // Volta o link "Esqueci senha"
+        
+        authTitle.innerText = "Acesso ao Sistema";
+        submitBtn.innerText = "Entrar";
+        authSwitchText.innerText = "Não tem uma conta?";
+        toggleRegisterBtn.innerText = "Criar conta";
+        msgBox.innerHTML = "";
     }
+}
 
-    let isRegisterMode = false;
-    const loginForm = document.getElementById('login-form');
-    const toggleReg = document.getElementById('toggle-register');
-    const toggleBtn = document.getElementById('toggle-password');
-    const footerYear = document.getElementById('login-year');
+// --- EVENTOS ---
 
-    if(footerYear) footerYear.textContent = new Date().getFullYear();
+toggleRegisterBtn.addEventListener('click', () => toggleView());
 
-    // Alternar visibilidade da senha
-    if(toggleBtn) {
-        toggleBtn.onclick = () => { 
-            const i = document.getElementById('password'); 
-            const icon = toggleBtn.querySelector('i');
-            if (i.type === 'password') {
-                i.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                i.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        };
-    }
+forgotPassLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    showMessage("Preencha os dados abaixo e a resposta secreta para redefinir.", "success");
+    if (!isRegistering) toggleView();
+});
 
-    // Alternar entre Login e Cadastro
-    if(toggleReg) {
-        toggleReg.onclick = (e) => {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('register-fields').classList.toggle('hidden', !isRegisterMode);
-            document.getElementById('login-submit').textContent = isRegisterMode ? 'Cadastrar' : 'Entrar';
-            document.getElementById('auth-title').textContent = isRegisterMode ? 'Criar Conta' : 'Acesso ao Sistema';
-            document.getElementById('auth-switch-text').textContent = isRegisterMode ? 'Já tem conta?' : 'Não tem conta?';
-            e.target.textContent = isRegisterMode ? 'Fazer Login' : 'Criar conta';
-            document.getElementById('forgot-password-link').classList.toggle('hidden', isRegisterMode);
-        };
-    }
+togglePasswordBtn.addEventListener('click', () => {
+    const passInput = document.getElementById('password');
+    passInput.type = passInput.type === 'password' ? 'text' : 'password';
+});
 
-    // Submissão do Formulário
-    if(loginForm) {
-        loginForm.onsubmit = (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const pwd = document.getElementById('password').value;
+// --- LÓGICA PRINCIPAL ---
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
 
-            // --- MODO CADASTRO ---
-            if(isRegisterMode) {
-                const confirmPwd = document.getElementById('confirm-password').value;
-                const question = document.getElementById('reg-secret-question').value;
-                const answer = document.getElementById('reg-secret-answer').value;
+    try {
+        if (!isRegistering) {
+            // ================= MODO LOGIN =================
+            msgBox.innerText = "Verificando..."; 
+            
+            const { data, error } = await db
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle(); 
 
-                if(pwd !== confirmPwd) return showNotification('Senhas não conferem', 'warning');
-                if(!question || !answer) return showNotification('Preencha as perguntas de segurança.', 'warning');
-                if(pwd.length < 4) return showNotification('A senha deve ter no mínimo 4 caracteres.', 'warning');
-
-                const newUser = db.createUser(email, 'hash_'+pwd, question, answer);
-                if(!newUser) return showNotification('E-mail já cadastrado.', 'error');
-                
-                showNotification('Conta criada com sucesso! Faça login.', 'success');
-                // Voltar para tela de login
-                toggleReg.click();
-                loginForm.reset();
+            if (error) {
+                console.error(error);
+                showMessage("Erro de conexão.", "error");
                 return;
             }
 
-            // --- MODO LOGIN ---
-            const user = db.findUser(email);
-            if(!user || user.passwordHash !== 'hash_'+pwd) {
-                return showNotification('E-mail ou senha incorretos.', 'error');
+            // USUÁRIO NÃO ENCONTRADO
+            if (!data) {
+                // ALTERAÇÃO AQUI: Não muda a tela, apenas mostra a pergunta clicável
+                msgBox.innerHTML = `Usuário não encontrado. <br>
+                    <a href="#" id="link-create-acc" style="color: inherit; text-decoration: underline; font-weight: bold;">
+                        Deseja criar uma conta?
+                    </a>`;
+                msgBox.className = 'msg-error';
+                
+                // Adiciona o evento de clique na pergunta que acabamos de criar
+                document.getElementById('link-create-acc').onclick = (evt) => {
+                    evt.preventDefault();
+                    toggleView(); // Agora sim muda a tela se clicar
+                };
+                
+                return;
             }
 
-            // Salvar sessão e redirecionar
-            localStorage.setItem('dhl_active_user', JSON.stringify(user));
-            window.location.href = 'time_tracker.html';
-        };
-    }
+            // SENHA INCORRETA
+            if (data.password !== password) {
+                showMessage("Senha incorreta.", "error");
+                return;
+            }
 
-    // Lógica simples de "Esqueci minha senha" (Placeholder para modal real)
-    const forgotLink = document.getElementById('forgot-password-link');
-    if(forgotLink) {
-        forgotLink.onclick = (e) => {
-            e.preventDefault();
-            // Aqui você pode implementar o modal de recuperação se ele existir no HTML index.html
-            // Como no código original o modal de recuperação estava no HTML mas não visível no snippet:
-            alert('Para resetar a senha, entre em contato com o administrador ou use a pergunta secreta (Recurso em desenvolvimento).');
-        };
+            // SUCESSO NO LOGIN
+            console.log("Login OK!");
+            localStorage.setItem('usuarioLogado', email);
+            localStorage.setItem('dhl_active_user', JSON.stringify({ email: email, name: email.split('@')[0] }));
+            localStorage.removeItem('dhl_timer_start');
+            localStorage.removeItem('dhl_timer_activity');
+            window.location.href = 'time_tracker.html';
+
+        } else {
+            // ================= MODO REGISTRO / REDEFINIÇÃO =================
+            msgBox.innerText = "Processando...";
+            
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const secretQuestion = document.getElementById('reg-secret-question').value;
+            const secretAnswer = document.getElementById('reg-secret-answer').value.trim();
+
+            if (password !== confirmPassword) return showMessage("As senhas não coincidem.");
+            if (!secretQuestion || !secretAnswer) return showMessage("Preencha a pergunta secreta.");
+
+            const { data: userExisting } = await db
+                .from('users')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (userExisting) {
+                // REDEFINIÇÃO
+                if (userExisting.secret_answer && 
+                    userExisting.secret_answer.toLowerCase() === secretAnswer.toLowerCase()) {
+                    
+                    const { error: updateError } = await db
+                        .from('users')
+                        .update({ password: password })
+                        .eq('email', email);
+
+                    if (updateError) {
+                        showMessage("Erro ao atualizar senha.", "error");
+                    } else {
+                        showMessage("Senha redefinida! Entrando...", "success");
+                        localStorage.setItem('usuarioLogado', email);
+                        localStorage.setItem('dhl_active_user', JSON.stringify({ email: email, name: email.split('@')[0] }));
+                        setTimeout(() => { window.location.href = 'time_tracker.html'; }, 1000);
+                    }
+                } else {
+                    showMessage("Resposta secreta incorreta.", "error");
+                }
+            } else {
+                // NOVO CADASTRO
+                const { error: insertError } = await db
+                    .from('users')
+                    .insert({
+                        email: email,
+                        password: password,
+                        secret_question: secretQuestion,
+                        secret_answer: secretAnswer
+                    });
+
+                if (insertError) {
+                    showMessage("Erro ao cadastrar: " + insertError.message, "error");
+                } else {
+                    showMessage("Conta criada! Entrando...", "success");
+                    localStorage.setItem('usuarioLogado', email);
+                    localStorage.setItem('dhl_active_user', JSON.stringify({ email: email, name: email.split('@')[0] }));
+                    setTimeout(() => { window.location.href = 'time_tracker.html'; }, 1000);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Erro JS:", err);
+        showMessage("Ocorreu um erro inesperado.", "error");
     }
 });
