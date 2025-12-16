@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minhas Finanças Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-screen" class="container">
+        <div class="login-box">
+            <h1 id="auth-title">Entrar</h1>
+            <p class="subtitle" id="auth-subtitle">Controle Financeiro</p>
+            <p id="login-error-msg" class="error-text hidden"></p>
+            
+            <!-- Login -->
+            <div id="login-fields">
+                <div class="input-group"><input type="email" id="email" placeholder="Seu E-mail"></div>
+                <div class="input-group"><input type="password" id="password" placeholder="Sua Senha"></div>
+                
+                <div class="forgot-pass">
+                    <span onclick="toggleRecoveryMode()">Esqueci minha senha</span>
+                </div>
+            </div>
+
+            <!-- Cadastro (Melhorado) -->
+            <div id="register-fields" class="hidden">
+                <div class="input-group"><input type="email" id="reg-email" placeholder="E-mail"></div>
+                <div class="input-group"><input type="password" id="reg-password" placeholder="Crie uma Senha"></div>
+                <div class="input-group"><input type="text" id="reg-name" placeholder="Seu Nome Completo"></div>
+                
+                <div style="text-align: left; margin: 10px 0 5px; color: var(--text-light); font-size: 12px;">Segurança para Recuperação:</div>
+                <div class="input-group">
+                    <select id="reg-question">
+                        <option value="" disabled selected>Escolha uma Pergunta Secreta</option>
+                        <option value="Nome do primeiro pet?">Nome do primeiro pet?</option>
+                        <option value="Nome da mãe?">Nome da mãe?</option>
+                        <option value="Cidade de nascimento?">Cidade de nascimento?</option>
+                        <option value="Time de coração?">Time de coração?</option>
+                    </select>
+                </div>
+                <div class="input-group"><input type="text" id="reg-answer" placeholder="Sua Resposta"></div>
+            </div>
+
+            <!-- Recuperação de Senha (Novo) -->
+            <div id="recovery-fields" class="hidden">
+                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">
+                    Confirme seus dados para receber um e-mail de redefinição.
+                </p>
+                <div class="input-group"><input type="email" id="rec-email" placeholder="E-mail da conta"></div>
+                
+                <div class="input-group">
+                    <select id="rec-question">
+                         <option value="" disabled selected>Qual sua pergunta secreta?</option>
+                         <option value="Nome do primeiro pet?">Nome do primeiro pet?</option>
+                         <option value="Nome da mãe?">Nome da mãe?</option>
+                         <option value="Cidade de nascimento?">Cidade de nascimento?</option>
+                         <option value="Time de coração?">Time de coração?</option>
+                    </select>
+                </div>
+                <div class="input-group"><input type="text" id="rec-answer" placeholder="Resposta da pergunta"></div>
+            </div>
+            
+            <button onclick="handleAuthAction()" id="btn-auth">Entrar</button>
+            <button onclick="closeRecovery()" id="btn-back-auth" class="small-btn hidden" style="margin-top: 10px; width: 100%;">Voltar</button>
+            
+            <div id="auth-footer" style="margin-top: 20px; font-size: 13px;">
+                <span class="link-btn" id="toggle-auth-mode" onclick="toggleAuthMode()">Criar conta</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-screen" class="container hidden">
+        <header>
+            <div class="profile-area">
+                <div class="user-basic">
+                    <div class="avatar-wrapper">
+                        <img id="user-avatar" src="https://via.placeholder.com/150">
+                    </div>
+                    <div>
+                        <h2 id="welcome-msg" style="font-size: 16px;">Olá!</h2>
+                        <p style="font-size: 12px; color: #94a3b8;">Visão Geral</p>
+                    </div>
+                </div>
+                <!-- Novo Ícone de Edição -->
+                <span class="material-icons settings-icon" onclick="openProfileEditModal()">manage_accounts</span>
+            </div>
+
+            <!-- Resumo Financeiro -->
+            <div class="finance-summary">
+                <div class="fin-card">
+                    <span>Entradas</span>
+                    <h3 id="total-income" class="text-green">R$ 0,00</h3>
+                </div>
+                <div class="fin-card">
+                    <span>Saídas</span>
+                    <h3 id="total-expense" class="text-red">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <div id="main-balance-card" class="main-balance">
+                <span>Saldo Atual</span>
+                <h1 id="total-balance">R$ 0,00</h1>
+            </div>
+        </header>
+        
+        <!-- Widget Cartão de Crédito -->
+        <div class="credit-card-widget">
+            <div class="cc-header">
+                <span>Limite Cartão de Crédito</span>
+                <span id="cc-percentage">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div id="cc-progress" class="progress-fill"></div>
+            </div>
+            <div class="cc-info">
+                <span id="cc-used" class="text-red">Gasto: R$ 0</span>
+                <span id="cc-limit">Limite: R$ 0</span>
+            </div>
+        </div>
+
+        <!-- Filtros (Hoje Primeiro) -->
+        <div class="filter-section">
+            <div class="date-filters">
+                <button class="filter-chip active" id="btn-today" onclick="setFilter('today', this)">Hoje</button>
+                <button class="filter-chip" onclick="setFilter('week', this)">Semana</button>
+                <button class="filter-chip" onclick="setFilter('month', this)">Mês</button>
+                <button class="filter-chip" onclick="setFilter('all', this)">Geral</button>
+            </div>
+            <div class="view-toggle">
+                <select id="view-mode" onchange="toggleViewMode()">
+                    <option value="detailed">Detalhado</option>
+                    <option value="simple">Resumido</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="list-header" style="margin-top: 15px; padding: 0 20px;">
+            <h3>Extrato</h3>
+            <button class="refresh-btn" onclick="fetchExpenses()"><span class="material-icons">refresh</span></button>
+        </div>
+
+        <div id="expenses-list">
+            <!-- JS vai preencher -->
+        </div>
+
+        <div class="fab" onclick="openExpenseModal()">
+            <span class="material-icons">add</span>
+        </div>
+    </div>
+
+    <!-- MODAL TRANSAÇÃO (NOVO) -->
+    <div id="expense-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Nova Transação</h2>
+            <input type="hidden" id="expense-id">
+            
+            <!-- Toggle Receita/Despesa -->
+            <div class="type-toggle">
+                <div id="type-despesa" class="type-option active-expense" onclick="setTransType('despesa')">Despesa</div>
+                <div id="type-receita" class="type-option" onclick="setTransType('receita')">Receita</div>
+            </div>
+
+            <label class="input-label">Descrição</label>
+            <input type="text" id="desc" placeholder="Ex: Salário, Mercado...">
+
+            <div class="row">
+                <div class="col">
+                    <label class="input-label">Valor</label>
+                    <input type="number" id="val" placeholder="0.00" step="0.01">
+                </div>
+                <div class="col">
+                    <label class="input-label">Data</label>
+                    <input type="date" id="date">
+                </div>
+            </div>
+            
+            <label class="input-label">Categoria</label>
+            <select id="cat">
+                <option value="Outros">Outros</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Moradia">Moradia</option>
+                <option value="Educação">Educação</option>
+                <option value="Salário">Salário (Receita)</option>
+                <option value="Vendas">Vendas (Receita)</option>
+            </select>
+
+            <label class="input-label">Método</label>
+            <select id="payment">
+                <option value="Pix">Pix</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Boleto">Boleto</option>
+            </select>
+
+            <div class="modal-actions">
+                <button class="small-btn" onclick="closeExpenseModal()">Cancelar</button>
+                <button id="btn-delete-expense" class="delete-full-btn hidden" onclick="deleteCurrentExpense()" style="background: var(--danger); color: white; border: none;">Excluir</button>
+                <button id="btn-save-expense" class="save-btn" onclick="saveExpense()" disabled>Salvar</button>
+            </div>
+        </div>
+    </div>
+
+<!-- MODAL PERFIL COM ABAS -->
+<div id="profile-modal" class="modal hidden">
+    <div class="modal-content">
+        
+        <!-- Navegação das Abas -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('profile')">Dados do Perfil</button>
+            <button class="tab-btn" onclick="switchTab('account')">Config. da Conta</button>
+        </div>
+
+        <!-- ABA 1: PERFIL (Público/Pessoal) -->
+        <div id="tab-profile" class="tab-content active">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img id="profile-edit-img" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                <br>
+                <button class="small-btn" onclick="document.getElementById('avatar-upload').click()" style="margin-top: 10px;">Alterar Foto</button>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(this)">
+            </div>
+
+            <label class="input-label">Nome Completo</label>
+            <input type="text" id="prof-name" placeholder="Seu nome">
+
+            <label class="input-label">Profissão</label>
+            <input type="text" id="prof-job" placeholder="Ex: Designer, Desenvolvedor...">
+
+            <label class="input-label">Telefone</label>
+            <input type="tel" id="prof-phone" placeholder="(XX) 9XXXX-XXXX">
+
+            <label class="input-label">Biografia</label>
+            <textarea id="prof-bio" placeholder="Um pouco sobre você..."></textarea>
+        </div>
+
+<!-- ABA 2: CONTA (Segurança) -->
+            <div id="tab-account" class="tab-content">
+                <label class="input-label">E-mail de Acesso</label>
+                <!-- Agora é um INPUT editável -->
+                <input type="email" id="prof-email-input">
+
+                <label class="input-label">Alterar Senha</label>
+                <input type="password" id="prof-new-pass" placeholder="Deixe em branco para não alterar">
+
+                <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0;">
+                
+                <!-- ... Restante dos campos (Perguntas, Limite) mantém igual ... -->
+                 <label class="input-label">Pergunta Secreta</label>
+                 <select id="prof-question">
+                    <option value="Nome do primeiro pet?">Nome do primeiro pet?</option>
+                    <option value="Nome da mãe?">Nome da mãe?</option>
+                    <option value="Cidade de nascimento?">Cidade de nascimento?</option>
+                    <option value="Escola de infância?">Escola de infância?</option>
+                </select>
+
+                <label class="input-label">Resposta da Pergunta</label>
+                <input type="text" id="prof-answer">
+
+                <label class="input-label" style="color: var(--warning); margin-top: 15px;">Limite Global do Cartão</label>
+                <input type="number" id="prof-limit">
+            </div>
+
+            <!-- Ações Globais: Botão Sair movido para cá -->
+            <div class="modal-actions">
+                <button class="logout-btn" onclick="requestLogout()">
+                    
+                    Sair
+                </button>
+                <button class="small-btn" onclick="closeProfileModal()">Fechar</button>
+                <button id="btn-save-profile" class="save-btn" onclick="preSaveProfile()" disabled>Salvar Tudo</button>
+            </div>
+    </div>
+</div>
+
+<!-- MODAL DE DIÁLOGO UNIVERSAL (Confirmação, Erro, Exclusão) -->
+<div id="confirm-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px; margin: 0 auto;">
+        
+        <!-- Ícone Dinâmico -->
+        <div class="modal-icon-container">
+            <span id="dialog-icon" class="material-icons modal-icon-large">info</span>
+        </div>
+
+        <h3 id="confirm-title" style="margin-bottom: 10px;">Título</h3>
+        <p id="confirm-msg">Mensagem...</p>
+        
+        <!-- Campo de Senha (Opcional) -->
+        <div id="confirm-password-field" class="hidden" style="margin-bottom: 20px;">
+            <label class="input-label" style="text-align: center;">Confirme sua senha:</label>
+            <input type="password" id="confirm-pass-input" placeholder="Senha atual" style="text-align: center;">
+        </div>
+
+        <!-- Botões -->
+        <div class="modal-actions" style="justify-content: center;">
+            <button id="btn-cancel-action" class="small-btn" onclick="closeConfirmModal()">Cancelar</button>
+            <button id="btn-confirm-action" class="save-btn">Confirmar</button>
+        </div>
+    </div>
+</div>
+    <script src="script.js"></script>
+</body>
+</html>

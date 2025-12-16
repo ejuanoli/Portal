@@ -1,0 +1,381 @@
+:root {
+    --primary: #818cf8;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --text-light: #94a3b8;
+    --input-bg: #334155;
+    --danger: #ef4444;
+    --success: #10b981; /* Verde para Receitas */
+    --warning: #f59e0b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+*::-webkit-scrollbar {
+    display: none;
+}
+
+/* Firefox, IE e Edge */
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+
+.hidden { display: none !important; }
+.container { max-width: 480px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+
+/* Login */
+#login-screen { justify-content: center; padding: 25px; }
+.login-box { background: var(--card); padding: 30px; border-radius: 24px; text-align: center; }
+.login-box h1 { color: var(--primary); margin-bottom: 5px; }
+.subtitle { color: var(--text-light); margin-bottom: 25px; font-size: 14px; }
+.input-group input, .input-group select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #475569; border-radius: 12px; background: var(--input-bg); color: white; outline: none; }
+button {
+    /* Removemos o width: 100% para eles não ocuparem a tela toda */
+    padding: 12px 20px;
+    background: var(--primary);
+    color: #0f172a;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 14px;
+}
+.link-btn { color: var(--primary); cursor: pointer; text-decoration: underline; font-size: 13px; }
+.error-text { color: var(--danger); font-size: 13px; margin-bottom: 10px; }
+
+/* Dashboard Header */
+header { background: var(--card); padding: 20px; border-radius: 0 0 24px 24px; margin-bottom: 10px; }
+.profile-area { display: flex; align-items: center; justify-content: space-between; }
+.user-basic { display: flex; align-items: center; gap: 15px; }
+.avatar-wrapper { position: relative; width: 50px; height: 50px; }
+#user-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+.settings-icon { color: var(--text-light); cursor: pointer; font-size: 24px; }
+
+/* Dashboard Financeiro (Novos Cards) */
+.finance-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+.fin-card { background: #334155; padding: 12px; border-radius: 12px; text-align: center; }
+.fin-card span { font-size: 11px; color: var(--text-light); text-transform: uppercase; }
+.fin-card h3 { font-size: 16px; margin-top: 4px; }
+.text-green { color: var(--success); }
+.text-red { color: var(--danger); }
+
+/* Saldo Principal */
+.main-balance { margin-top: 15px; background: #312e81; padding: 15px; border-radius: 16px; text-align: center; border: 1px solid #4338ca; }
+.main-balance.negative { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+.main-balance span { font-size: 12px; opacity: 0.8; }
+.main-balance h1 { font-size: 28px; }
+
+/* Widget Cartão */
+.credit-card-widget { margin: 10px 20px; background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid #334155; }
+.cc-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--text-light); }
+.progress-bar { width: 100%; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--warning); width: 0%; transition: width 0.5s; }
+.cc-info { display: flex; justify-content: space-between; margin-top: 5px; font-size: 13px; font-weight: bold; }
+
+/* Filtros */
+.filter-section { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; margin-bottom: 10px; }
+.date-filters { display: flex; gap: 8px; }
+.filter-chip { padding: 6px 12px; border-radius: 20px; background: var(--card); color: var(--text-light); font-size: 12px; border: 1px solid #334155; cursor: pointer; }
+.filter-chip.active { background: var(--primary); color: #0f172a; font-weight: bold; border-color: var(--primary); }
+.view-toggle select { padding: 5px; border-radius: 8px; border: 1px solid #475569; font-size: 12px; background: var(--card); color: white; }
+
+/* Listas */
+#expenses-list { flex: 1; overflow-y: auto; padding: 0 20px 80px 20px; }
+
+/* Item Detalhado */
+.expense-details {font-size: 14px;}
+.expense-item { background: var(--card); padding: 12px 16px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; cursor: pointer; }
+.expense-left { display: flex; gap: 12px; align-items: center; }
+.cat-icon { width: 40px; height: 40px; background: #312e81; color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.cat-icon.income { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.expense-amount { font-weight: bold; font-size: 13px;}
+.expense-amount.income { color: var(--success); }
+
+/* Item Resumido (Novo Visual) */
+.summary-item { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); }
+.summary-date { font-weight: bold; color: var(--text); }
+.summary-total { font-weight: bold; font-size: 16px; }
+
+/* FAB */
+.fab { position: fixed; bottom: 25px; right: 25px; width: 56px; height: 56px; background: var(--primary); color: #0f172a; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer; z-index: 20; }
+
+/* Modais */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: flex-end; backdrop-filter: blur(3px); }
+.modal-content { background: var(--card); width: 100%; padding: 25px; border-radius: 28px 28px 0 0; animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto; border-top: 1px solid #475569; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal input, .modal select, .modal textarea { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #475569; border-radius: 10px; background: var(--input-bg); color: white; outline: none; }
+
+/* Toggle Tipo (Receita/Despesa) */
+.type-toggle { display: flex; background: var(--input-bg); padding: 4px; border-radius: 12px; margin-bottom: 15px; }
+.type-option { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: 0.2s; }
+.type-option.active-expense { background: var(--danger); color: white; font-weight: bold; }
+.type-option.active-income { background: var(--success); color: white; font-weight: bold; }
+.login-box button,
+.save-btn, 
+.delete-full-btn,
+.logout-btn
+ {
+    width: 100%; 
+}
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    margin-top: 15px;
+}
+
+.refresh-btn {
+    background: transparent; /* Fundo transparente */
+    border: none;            /* Sem borda */
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.refresh-btn:hover {
+    color: var(--primary);
+    background: transparent; /* Mantém transparente no hover */
+    transform: rotate(90deg); /* Efeito de giro suave */
+}
+
+.refresh-btn .material-icons {
+    font-size: 24px; /* Tamanho da fonte ajustado */
+}
+
+/* --- BOTÃO ALTERAR FOTO / CANCELAR --- */
+.small-btn {
+    background: transparent;
+    border: 1px solid #475569;
+    color: var(--text-light);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end; /* Alinha à direita */
+    gap: 10px; /* Espaço entre eles */
+    margin-top: 20px;
+}
+
+/* --- ESTILOS DO MODAL DE DIÁLOGO --- */
+.modal-icon-container {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.modal-icon-large {
+    font-size: 48px;
+    color: var(--text-light);
+}
+
+/* --- BLOQUEAR REDIMENSIONAMENTO DA BIO --- */
+textarea {
+    resize: none; /* Impede puxar a caixa */
+    height: 100px; /* Altura fixa confortável */
+}
+
+/* --- LINK DE RECUPERAÇÃO --- */
+.forgot-pass {
+    text-align: right;
+    margin-bottom: 15px;
+}
+.forgot-pass span {
+    color: var(--text-light);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.forgot-pass span:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+/* --- BOTÃO DESABILITADO (Reforço) --- */
+.save-btn:disabled,
+.btn-auth:disabled {
+    background-color: #334155;
+    color: #64748b;
+    border: 1px solid #475569;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Cores de Estado */
+.icon-danger { color: var(--danger); }
+.icon-warning { color: var(--warning); }
+.icon-success { color: var(--success); }
+
+/* Texto de mensagem centralizado e mais legível */
+#confirm-msg {
+    text-align: center;
+    line-height: 1.5;
+    color: #cbd5e1;
+    margin-bottom: 25px;
+}
+
+#confirm-title {
+    text-align: center;
+    font-size: 20px;
+}
+
+/* Animação de tremor para senha incorreta */
+.shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Garante que os botões dentro do modal não ocupem 100% */
+.save-btn, .small-btn, .logout-btn {
+     /* Sobrescreve largura total */
+    min-width: 120px;       /* Tamanho mínimo confortável */
+    padding: 12px 20px;
+    max-height: 50px;
+}
+
+/* Ajuste de fontes gerais nos inputs */
+input, select {
+    font-size: 14px !important; /* Evita zoom em celulares */
+}
+
+.expand-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.expand-btn {
+    background: #334155;
+    color: var(--text-light);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.expand-btn:hover {
+    background: var(--primary);
+    color: #0f172a;
+}
+
+/* --- BOTÃO SAIR (NO PERFIL) --- */
+.logout-btn {
+    background: rgba(239, 68, 68, 0.1); /* Fundo vermelho suave */
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.logout-btn:hover {
+    background: var(--danger);
+    color: white;
+}
+
+#extra-expenses-container {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- ABAS DO MODAL --- */
+.tab-nav {
+    display: flex;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px;
+    color: var(--text-light);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    transition: 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Área de conteúdo das abas */
+.tab-content {
+    display: none; /* Escondido por padrão */
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block; /* Mostra o ativo */
+}
+
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #475569;
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: white;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- BOTÕES DE AÇÃO NO PERFIL --- */
+.btn-danger {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Ajuste para o input de email parecer editável agora */
+#prof-email-input {
+    background: var(--input-bg);
+    border: 1px solid #475569;
+    color: white;
+    cursor: text;
+}
